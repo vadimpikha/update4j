@@ -1,12 +1,12 @@
 /*
  * Copyright 2020 Mordechai Meisels
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -66,7 +66,7 @@ class ConfigImpl {
 
     @Deprecated
     static boolean doLegacyUpdate(Configuration config, Path tempDir, PublicKey key, Injectable injectable,
-                    UpdateHandler handler) {
+                                  UpdateHandler handler) {
 
         boolean updateTemp = tempDir != null;
         boolean doneDownloads = false;
@@ -100,9 +100,10 @@ class ConfigImpl {
             handler.updateCheckUpdatesProgress(0f);
 
             List<FileMetadata> osFiles = config.getFiles()
-                            .stream()
-                            .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
-                            .collect(Collectors.toList());
+                    .stream()
+                    .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
+                    .filter(file -> file.getArch() == null || file.getArch() == Arch.CURRENT)
+                    .collect(Collectors.toList());
 
             long updateJobSize = osFiles.stream().mapToLong(FileMetadata::getSize).sum();
             double updateJobCompleted = 0;
@@ -138,7 +139,7 @@ class ConfigImpl {
                 if (key == null && config.getSignature() != null) {
                     Warning.signature();
                 }
-                
+
                 handler.startDownloads();
 
                 for (FileMetadata file : requiresUpdate) {
@@ -159,7 +160,7 @@ class ConfigImpl {
                     downloadedCollection.put(file, output);
 
                     try (InputStream in = handler.openDownloadStream(file);
-                                    OutputStream out = Files.newOutputStream(output)) {
+                         OutputStream out = Files.newOutputStream(output)) {
 
                         // We should set download progress only AFTER the request has returned.
                         // The delay can be monitored by the difference between calls from startDownload to this.
@@ -262,7 +263,7 @@ class ConfigImpl {
             List<FileMetadata> updated = new ArrayList<>();
 
             UpdateContext ctx = new UpdateContext(config, requiresUpdate, updated, null, options.getPublicKey(),
-                            options.getArchiveLocation());
+                    options.getArchiveLocation());
 
             handler.init(ctx);
 
@@ -270,9 +271,10 @@ class ConfigImpl {
             handler.updateCheckUpdatesProgress(0f);
 
             List<FileMetadata> osFiles = config.getFiles()
-                            .stream()
-                            .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
-                            .collect(Collectors.toList());
+                    .stream()
+                    .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
+                    .filter(file -> file.getArch() == null || file.getArch() == Arch.CURRENT)
+                    .collect(Collectors.toList());
 
             long updateJobSize = osFiles.stream().mapToLong(FileMetadata::getSize).sum();
             double updateJobCompleted = 0;
@@ -308,7 +310,7 @@ class ConfigImpl {
                 if (key == null && config.getSignature() != null) {
                     Warning.signature();
                 }
-                
+
                 Archive archive = new Archive(options.getArchiveLocation());
                 try (FileSystem zip = archive.openConnection()) {
 
@@ -318,15 +320,15 @@ class ConfigImpl {
                     try (BufferedWriter out = Files.newBufferedWriter(configPath)) {
                         config.write(out);
                     }
-                    
+
                     // Save dynamic properties, if any. #110
-                    if(!config.getDynamicProperties().isEmpty()) {
-                        Path dynamicPath = zip.getPath(Archive.RESERVED_DIR,  Archive.DYNAMIC_PATH);
-                        try(BufferedWriter out = Files.newBufferedWriter(dynamicPath)) {
+                    if (!config.getDynamicProperties().isEmpty()) {
+                        Path dynamicPath = zip.getPath(Archive.RESERVED_DIR, Archive.DYNAMIC_PATH);
+                        try (BufferedWriter out = Files.newBufferedWriter(dynamicPath)) {
                             MapMapper.write(out, config.getDynamicProperties(), Archive.DYNAMIC_NODE);
                         }
                     }
-                    
+
 
                     handler.startDownloads();
                     for (FileMetadata file : requiresUpdate) {
@@ -340,7 +342,7 @@ class ConfigImpl {
                         byte[] buffer = new byte[1024 * 8];
 
                         try (InputStream in = handler.openDownloadStream(file);
-                                        OutputStream out = Files.newOutputStream(output)) {
+                             OutputStream out = Files.newOutputStream(output)) {
 
                             // We should set download progress only AFTER the request has returned.
                             // The delay can be monitored by the difference between calls from startDownload to this.
@@ -406,7 +408,7 @@ class ConfigImpl {
 
     @Deprecated
     private static void completeDownloads(Map<FileMetadata, Path> files, Path tempDir, boolean isTemp)
-                    throws IOException {
+            throws IOException {
 
         if (!files.isEmpty()) {
 
@@ -444,7 +446,7 @@ class ConfigImpl {
                 }
 
                 try (ObjectOutputStream out = new ObjectOutputStream(
-                                Files.newOutputStream(updateDataFile, StandardOpenOption.CREATE))) {
+                        Files.newOutputStream(updateDataFile, StandardOpenOption.CREATE))) {
                     out.writeObject(updateTempData);
                 }
 
@@ -454,20 +456,20 @@ class ConfigImpl {
     }
 
     private static void validateFile(FileMetadata file, Path output, Signature sig)
-                    throws IOException, SignatureException {
+            throws IOException, SignatureException {
 
         long actualSize = Files.size(output);
         if (actualSize != file.getSize()) {
             throw new IllegalStateException("Size of file '" + file.getPath().getFileName()
-                            + "' does not match size in configuration. Expected: " + file.getSize() + ", found: "
-                            + actualSize);
+                    + "' does not match size in configuration. Expected: " + file.getSize() + ", found: "
+                    + actualSize);
         }
 
         long actualChecksum = FileUtils.getChecksum(output);
         if (actualChecksum != file.getChecksum()) {
             throw new IllegalStateException("Checksum of file '" + file.getPath().getFileName()
-                            + "' does not match checksum in configuration. Expected: "
-                            + Long.toHexString(file.getChecksum()) + ", found: " + Long.toHexString(actualChecksum));
+                    + "' does not match checksum in configuration. Expected: "
+                    + Long.toHexString(file.getChecksum()) + ", found: " + Long.toHexString(actualChecksum));
         }
 
         if (sig != null) {
@@ -479,7 +481,7 @@ class ConfigImpl {
         }
 
         if (file.getPath().toString().endsWith(".jar") && !file.isIgnoreBootConflict()
-                        && !ModuleUtils.userBootModules().isEmpty()) {
+                && !ModuleUtils.userBootModules().isEmpty()) {
             checkBootConflicts(file, output);
         }
     }
@@ -496,10 +498,10 @@ class ConfigImpl {
         Set<String> moduleNames = modules.stream().map(Module::getName).collect(Collectors.toSet());
 
         Set<String> sysMods = ModuleFinder.ofSystem()
-                        .findAll()
-                        .stream()
-                        .map(mr -> mr.descriptor().name())
-                        .collect(Collectors.toSet());
+                .findAll()
+                .stream()
+                .map(mr -> mr.descriptor().name())
+                .collect(Collectors.toSet());
 
         ModuleDescriptor newMod = null;
         try {
@@ -512,7 +514,7 @@ class ConfigImpl {
         if (moduleNames.contains(newMod.name())) {
             Warning.moduleConflict(newMod.name());
             throw new IllegalStateException(
-                            "Module '" + newMod.name() + "' conflicts with a module in the boot modulepath");
+                    "Module '" + newMod.name() + "' conflicts with a module in the boot modulepath");
         }
 
         Set<String> packages = modules.stream().flatMap(m -> m.getPackages().stream()).collect(Collectors.toSet());
@@ -520,7 +522,7 @@ class ConfigImpl {
             if (packages.contains(p)) {
                 Warning.packageConflict(p);
                 throw new IllegalStateException("Package '" + p + "' in module '" + newMod.name()
-                                + "' conflicts with a package in the boot modulepath");
+                        + "' conflicts with a package in the boot modulepath");
 
             }
         }
@@ -536,7 +538,7 @@ class ConfigImpl {
                 if (!sysMods.contains(reqName)) {
                     Warning.missingSysMod(reqName);
                     throw new IllegalStateException("System module '" + reqName
-                                    + "' is missing from JVM image, required by '" + newMod.name() + "'");
+                            + "' is missing from JVM image, required by '" + newMod.name() + "'");
                 }
 
             }
@@ -545,26 +547,28 @@ class ConfigImpl {
 
     static void doLaunch(Configuration config, Injectable injectable, Launcher launcher) {
         List<FileMetadata> modules = config.getFiles()
-                        .stream()
-                        .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
-                        .filter(FileMetadata::isModulepath)
-                        .collect(Collectors.toList());
+                .stream()
+                .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
+                .filter(file -> file.getArch() == null || file.getArch() == Arch.CURRENT)
+                .filter(FileMetadata::isModulepath)
+                .collect(Collectors.toList());
 
         List<Path> modulepaths = modules.stream().map(FileMetadata::getNormalizedPath).collect(Collectors.toList());
 
         List<URL> classpaths = config.getFiles()
-                        .stream()
-                        .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
-                        .filter(FileMetadata::isClasspath)
-                        .map(FileMetadata::getNormalizedPath)
-                        .map(path -> {
-                            try {
-                                return path.toUri().toURL();
-                            } catch (MalformedURLException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .collect(Collectors.toList());
+                .stream()
+                .filter(file -> file.getOs() == null || file.getOs() == OS.CURRENT)
+                .filter(file -> file.getArch() == null || file.getArch() == Arch.CURRENT)
+                .filter(FileMetadata::isClasspath)
+                .map(FileMetadata::getNormalizedPath)
+                .map(path -> {
+                    try {
+                        return path.toUri().toURL();
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList());
 
         //Warn potential problems
         if (modulepaths.isEmpty() && classpaths.isEmpty()) {
@@ -574,17 +578,17 @@ class ConfigImpl {
         ModuleFinder finder = ModuleFinder.of(modulepaths.toArray(new Path[modulepaths.size()]));
 
         Set<ModuleDescriptor> moduleDescriptors = finder.findAll()
-                        .stream()
-                        .map(mr -> mr.descriptor())
-                        .collect(Collectors.toSet());
+                .stream()
+                .map(mr -> mr.descriptor())
+                .collect(Collectors.toSet());
 
         // Warn if any module requires an unresolved system module
         if (Warning.shouldWarn("unresolvedSystemModules")) {
             Set<String> resolvedSysMods = ModuleLayer.boot()
-                            .modules()
-                            .stream()
-                            .map(m -> m.getName())
-                            .collect(Collectors.toSet());
+                    .modules()
+                    .stream()
+                    .map(m -> m.getName())
+                    .collect(Collectors.toSet());
 
             List<String> missingSysMods = new ArrayList<>();
 
@@ -612,7 +616,7 @@ class ConfigImpl {
 
         ModuleLayer parent = ModuleLayer.boot();
         java.lang.module.Configuration cf = parent.configuration()
-                        .resolveAndBind(finder, ModuleFinder.of(), moduleNames);
+                .resolveAndBind(finder, ModuleFinder.of(), moduleNames);
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         DynamicClassLoader dynamic = DynamicClassLoader.findAncestor(contextClassLoader);
@@ -622,44 +626,44 @@ class ConfigImpl {
             }
         } else if (classpaths.size() > 0) {
             contextClassLoader = new URLClassLoader("classpath", classpaths.toArray(new URL[classpaths.size()]),
-                            contextClassLoader);
+                    contextClassLoader);
         }
 
         ModuleLayer.Controller controller = ModuleLayer.defineModulesWithOneLoader(cf, List.of(parent),
-                        contextClassLoader);
+                contextClassLoader);
         ModuleLayer layer = controller.layer();
 
         // manipulate exports, opens and reads
         for (FileMetadata mod : modules) {
             if (!mod.getAddExports().isEmpty() || !mod.getAddOpens().isEmpty() || !mod.getAddReads().isEmpty()) {
                 ModuleReference reference = finder.findAll()
-                                .stream()
-                                .filter(ref -> new File(ref.location().get()).toPath().equals(mod.getNormalizedPath()))
-                                .findFirst()
-                                .orElseThrow(IllegalStateException::new);
+                        .stream()
+                        .filter(ref -> new File(ref.location().get()).toPath().equals(mod.getNormalizedPath()))
+                        .findFirst()
+                        .orElseThrow(IllegalStateException::new);
 
                 Module source = layer.findModule(reference.descriptor().name()).orElseThrow(IllegalStateException::new);
 
                 for (AddPackage export : mod.getAddExports()) {
                     Module target = layer.findModule(export.getTargetModule())
-                                    .orElseThrow(() -> new IllegalStateException("Module '" + export.getTargetModule()
-                                                    + "' is not known to the layer."));
+                            .orElseThrow(() -> new IllegalStateException("Module '" + export.getTargetModule()
+                                    + "' is not known to the layer."));
 
                     controller.addExports(source, export.getPackageName(), target);
                 }
 
                 for (AddPackage open : mod.getAddOpens()) {
                     Module target = layer.findModule(open.getTargetModule())
-                                    .orElseThrow(() -> new IllegalStateException("Module '" + open.getTargetModule()
-                                                    + "' is not known to the layer."));
+                            .orElseThrow(() -> new IllegalStateException("Module '" + open.getTargetModule()
+                                    + "' is not known to the layer."));
 
                     controller.addOpens(source, open.getPackageName(), target);
                 }
 
                 for (String read : mod.getAddReads()) {
                     Module target = layer.findModule(read)
-                                    .orElseThrow(() -> new IllegalStateException(
-                                                    "Module '" + read + "' is not known to the layer."));
+                            .orElseThrow(() -> new IllegalStateException(
+                                    "Module '" + read + "' is not known to the layer."));
 
                     controller.addReads(source, target);
                 }
@@ -713,9 +717,9 @@ class ConfigImpl {
             }
         }
     }
-    
+
     private static float clamp(float val) {
-        return Math.max(0,  Math.min(1, val));
+        return Math.max(0, Math.min(1, val));
     }
-    
+
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 2018 Mordechai Meisels
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * 		http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -58,19 +58,19 @@ import static java.lang.System.Logger.Level.WARNING;
  * This class is the heart of the framework. It contains all the logic required
  * to draft new releases at the development side, or start the application at
  * the client side.
- * 
+ *
  * <p>
  * Although everything is contained in a single class; some methods are intended
  * to run either on the dev machine -- to draft new releases -- or client
  * machine, not both. The documentation of each method will point that out.
- * 
+ *
  * <p>
  * A configuration (or config) is linked to an XML file, and this class provide
  * methods to read, write, generate and sync configurations. Once a
  * configuration has been created, it is immutable and cannot be modified. There
  * are methods to manipulate the XML elements and create new configurations from
  * them, but the original remains untouched.
- * 
+ *
  * <h2>Terminology</h2>
  * <p>
  * <ul>
@@ -94,52 +94,52 @@ import static java.lang.System.Logger.Level.WARNING;
  * file. Can be used as placeholders in URI's, paths, class names, file comments
  * or in values of other properties.</li>
  * </ul>
- * 
+ *
  * <h1>Developer Side</h1>
  * <p>
  * You should primarily use this class whenever you want to draft a new release
  * to generate new configs. This might be done directly in code or be called by
  * build tools.
- * 
+ *
  * <p>
  * There are 3 ways generate configs.
- * 
+ *
  * <h3>1. Using the Builder API</h3>
  * <p>
  * {@link Configuration#builder()} is the entry point to the config builder API.
- * 
+ *
  * <p>
  * Here's a sample config created with this approach:
- * 
+ *
  * <pre>
  * Configuration config = Configuration.builder()
  *                 // resolve uri and path of each individual file against the base.
  *                 // if not present you must provider the absolute location to every individual file
  *                 // with the uri() and path() method
  *                 .baseUri("http://example.com/")
- * 
+ *
  *                 // reads actual value from client system property "user.home"
  *                 .basePath("${user.home}/myapp/")
- * 
+ *
  *                 // list all files from the given directory
  *                 .files(FileMetadata.streamDirectory("build/mylibs")
  *                                 // mark all jar files for classpath
  *                                 .peek(r -> r.classpath(r.getSource().toString().endsWith(".jar"))))
- * 
+ *
  *                 .file(FileMetadata.readFrom("otherDirectory/my-logo.png")
- * 
+ *
  *                                 //override http://example.com above
  *                                 .uri("https://s3.aws.com/some-location/img.png")
- * 
+ *
  *                                 // resolves base from basePath but
  *                                 // overrides my-logo.png from source
  *                                 .path("application-logo.png"))
- * 
+ *
  *                 // we're done!
  *                 .build();
  * </pre>
- * 
- * 
+ *
+ *
  * <h3>2. Synchronizing Existing Configuration</h3>
  * <p>
  * If you already have a configuration but you changed files without adding or
@@ -147,10 +147,10 @@ import static java.lang.System.Logger.Level.WARNING;
  * (if you use signature validation) without using the builder API, via
  * {@link Configuration#sync()}. A new config will be returned, the existing
  * config remains untouched:
- * 
+ *
  * <p>
  * Given this XML {@code config.xml}:
- * 
+ *
  * <pre>
  * &lt;configuration timestamp="2018-08-22T19:31:40.448450500Z"&gt;
  *     &lt;base uri="https://example.com/" path="${user.loc}"/&gt;
@@ -162,45 +162,45 @@ import static java.lang.System.Logger.Level.WARNING;
  *     &lt;/files&gt;
  * &lt;/configuration&gt;
  * </pre>
- * 
+ *
  * <p>
- * 
+ * <p>
  * You can synchronize it as:
- * 
+ *
  * <pre>
  * Configuration config = Configuration.read(Files.newBufferedReader(Paths.get("config.xml")));
- * 
+ *
  * // read files from actual locations listed in config
  * // in our case ${user.home}/Desktop/file1.jar
  * Configuration newConfig = config.sync();
- * 
+ *
  * // read files from different base path but same individual file name
  * // in our case ./build/file1.jar where "." is current directory
  * Configuration newConfig = config.sync(Paths.get("build"));
- * 
+ *
  * // read files from actual locations listed in config
  * // and sign with given PrivateKey
  * KeyStore ks = KeyStore.getInstance("JKS");
  * ks.load(Files.newInputStream(keystorePath), "Password1".toCharArray());
- * 
+ *
  * PrivateKey pk = (PrivateKey) ks.getKey("alias", "Password2".toCharArray());
  * Configuration newConfig = config.sync(pk);
  * </pre>
- * 
+ *
  * <p>
  * If you want to add a new file you should manually add the filename in the
  * config XML and {@code sync()} will do the rest:
- * 
+ *
  * <pre>
  * &lt;files&gt;
  *         &lt;file path="file1.jar" size="1348" checksum="fd7adfb7"/&gt;
- *         
+ *
  *         &lt;!-- The new file --&gt;
  *         &lt;file path="file2.jar" /&gt;
  * &lt;/files&gt;
  * </pre>
- * 
- * 
+ *
+ *
  * <h3>3. Manual XML Manipulation</h3>
  * <p>
  * You can access the XML DOM with the {@link ConfigMapper} class and load a
@@ -208,82 +208,82 @@ import static java.lang.System.Logger.Level.WARNING;
  * configuration. You can also write a mapper without parsing &mdash;
  * essentially skipping all validations &mdash; by the
  * {@link ConfigMapper#write(Writer)}.
- * 
+ *
  * <pre>
  * ConfigMapper mapper = new ConfigMapper();
  * mapper.baseUri = "https://example.com/"
- * 
+ *
  * FileMapper file = new FileMapper();
  * file.path = "/root/home/file.jar";
  * file.size = 3082;
  * file.checksum = "ac29bfa0";
  * mapper.files.add(file);
- * 
+ *
  * Configuration config = Configuration.parse(mapper);
  * </pre>
- * 
+ *
  * <p>
  * Or access the underlying mapper of an existing config (it creates a defensive
  * copy, so cache them once):
- * 
+ *
  * <pre>
  * ConfigMapper mapper = config.generateXmlMapper();
  * mapper.files.remove(0);
- * 
+ *
  * Configuration newConfig = Configuration.parse(mapper);
  * </pre>
- * 
+ *
  * <h2>Writing the Configuration</h2>
  * <p>
  * Once you successfully created a config, write them with
  * {@link Configuration#write(Writer)}:
- * 
+ *
  * <pre>
  * try (Writer out = Files.newBufferedWriter(location)) {
  *     config.write(out);
  * }
- * 
+ *
  * // or get a String
  * String theXml = config.toString();
  * system.out.println(theXml);
  * </pre>
- * 
+ *
  * <h1>Client Side</h1>
  * <p>
  * A config in the client serves two purposes: 1. Know when a file is outdated
  * and requires an update when {@code update()} is called 2. List of files to be
  * dynamically loaded onto the running JVM when {@code launch()} is called.
- * 
- * 
+ *
+ *
  * <p>
  * All logic on the client side is generally done in the bootstrap application,
  * like reading the config (and usually caching it somewhere locally in case
  * there's no Internet connection next time), updating and launching or whatever
  * needs to be done before launch or after business app shutdown or anywhere in
  * between, according to your needs.
- * 
+ *
  * <p>
  * In order to use the config you must first read it from a file or remote
  * location.
- * 
+ *
  * <h2>Reading a Configuration</h2>
  * <p>
  * Read a config using the {@link Configuration#read(Reader)}:
- * 
+ *
  * <pre>
  * Configuration config = null;
- * 
+ *
  * try (InputStream in = new URL("https://example.com/config.xml").openStream()) {
  *     config = Configuration.read(new InputStreamReader(in));
  * }
  * </pre>
- * 
+ *
  * <h2>Updating</h2>
  * <p>
  * Updating is done by calling any of the {@code update()} methods. You can
  * update without signature validation, or with, by using the {@link PublicKey}
  * overloads.
- * 
+ *
  * <p>
  * You can update before launching so the subsequent launch always has the
  * newest version, or you can update afterwards and only get the new version on
@@ -291,7 +291,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * existing files, since the JVM locks them upon launch; you can call any of the
  * {@code updateTemp()} overloads and complete the update on next restart via
  * {@link Update#finalizeUpdate(Path)}.
- * 
+ *
  * <p>
  * When update is called without explicitly passing an {@link UpdateHandler}
  * instance and {@link Configuration#getUpdateHandler()} returns {@code null},
@@ -299,61 +299,61 @@ import static java.lang.System.Logger.Level.WARNING;
  * and will use the one with the highest {@code version()} number. If
  * {@link Configuration#getUpdateHandler()} returns a class name, it will load
  * that class instead.
- * 
+ *
  * <p>
  * For more info how to register providers please refer to the <a
  * href=https://github.com/update4j/update4j/wiki/Documentation#dealing-with-providers>Github
  * Wiki</a>.
- * 
+ *
  * <p>
  * Regular updating (not {@code updateTemp()}):
- * 
+ *
  * <pre>
  * // loads a registered provider or DefaultUpdateHandler if non are found.
  * config.update(); // returns a boolean if succeeded
- * 
+ *
  * // updates with given update handler
  * config.update(new MyUpdateHandler());
- * 
+ *
  * // update and inject fields to and from the handler
  * config.update(myInjector);
- * 
+ *
  * // update and validate against the public key
  * config.update(myPubKey);
  * </pre>
- * 
+ *
  * <p>
  * Or you can update to a temporary location and finalize on next restart.
  * Here's a sample lifecycle:
- * 
+ *
  * <pre>
  * public static void main(String[] args) throws IOException {
  *     // the temporary location
  *     Path temp = Paths.get("update");
- * 
+ *
  *     // first check if last run made a temp update
  *     if (Update.containsUpdate(temp)) {
  *         Update.finalizeUpdate(temp);
  *     }
- * 
+ *
  *     // some random method
  *     Configuration config = getConfig();
  *     // we don't want to hang, so we can update immediately
  *     new Thread(() -> config.launch()).start();
- * 
+ *
  *     // and *after* launch do the update
  *     if (config.requiresUpdate()) {
  *         config.updateTemp(temp);
  *     }
  * }
  * </pre>
- * 
+ *
  * <h3>Consistency</h3>
  * <p>
  * If even a single file failed to download or if any other exception arises,
  * all downloads before the exception is rolled back to its original state as
  * before the call for update.
- * 
+ *
  * <h3>Boot Modulepath Conflicts</h3>
  * <p>
  * Every jar file gets checked if it were a valid file in boot modulepath; such
@@ -363,20 +363,20 @@ import static java.lang.System.Logger.Level.WARNING;
  * making the file visible to the boot modulepath and completely breaking the
  * application, as the JVM would resist to startup, thus not allowing this to be
  * fixed remotely.
- * 
+ *
  * <p>
  * If great care was taken that the given file will not be visible to the boot
  * modulepath (i.e. only to the dynamic path or boot <em>classpath</em>), it is
  * legal and you may override the check by marking
  * {@code ignoreBootConflict="true"} in the config file or via the corresponding
  * builder method.
- * 
+ *
  * <h3>Signature</h3>
  * <p>
  * Optionally, to secure your clients in the event of server compromise, you can
  * sign the configuration and files via the {@code signer()} method in the
  * Builder API, or {@link Configuration#sync(PrivateKey)}.
- * 
+ *
  * <p>
  * The config signature ensures that it has not been tampered, as changed URIs,
  * paths or properties. Changes that are not significant to the framework, as
@@ -386,66 +386,65 @@ import static java.lang.System.Logger.Level.WARNING;
  * is never part of the signature. To verify the config itself, read it with the
  * {@link #read(Reader, PublicKey)} overload, or invoke
  * {@link #verifyConfiguration(PublicKey)}.
- * 
+ *
  * <p>
  * To verify files on update, use the {@link PublicKey} overload of
  * {@code update()} or {@code updateTemp()} and it will reject the download if
  * any file fails.
- * 
+ *
  * <h1>Launching</h1>
  * <p>
  * Launching loads files onto the dynamic classpath or modulepath (or does not
  * load it if not marked with either), depending on their configuration and
  * launches it by using either a passed {@link Launcher}, or by loading a
  * launcher provider.
- * 
+ *
  * <p>
  * Accessing business classes in the bootstrap depends on the classloader
  * configuration. Please consult the <a href=
  * "https://github.com/update4j/update4j/wiki/Documentation#classloading-model">
  * GitHub wiki</a> for a thorough walkthrough of possible options.
- * 
+ *
  * <p>
  * When launch is called without explicitly passing a {@link Launcher} instance
  * and {@link #getLauncher()} returns {@code null}, the framework will try to
  * locate one between the registered service providers and will use the one with
  * the highest {@code version()} number. If {@link #getLauncher()} returns a
  * class name, it will load that class instead.
- * 
+ *
  * <p>
  * If an explicit launcher instance was passed, the instance only has reflective
  * access to the Business Application by reflecting against
  * {@link LaunchContext#getClassLoader()} unless you used the
  * {@link DynamicClassLoader}.
- * 
- * 
+ *
+ *
  * <pre>
  * // launch with registered launcher or DefaultLauncher if non were found
  * config.launch();
- * 
+ *
  * // launch and inject fields to and from the launcher
  * // assume the caller implements Injectable
  * config.launch(this);
- * 
+ *
  * // launch with passed launcher, *only reflective access*
  * config.launch(new MyLauncher());
- * 
+ *
  * // using DynamicClassLoader as context class loader
  * ClassLoader loader = new DynamicClassLoader();
  * Thread.currentThread().setContextClassLoader(loader);
- * 
+ *
  * config.launch(new MyLauncher());
  * Class&lt?&gt; loader.loadClass("com.example.BusinessClass");
- * 
+ *
  * // starting the application with the flag -Djava.system.class.loader=org.update4j.DynamicClassLoader
  * BusinessClass business = new BusinessClass() // Boom, NoClassDefFoundError
- * 
+ *
  * config.launch();
  * BusinessClass business = new BusinessClass() // Works flawlessly
  * </pre>
- * 
- * @author Mordechai Meisels
  *
+ * @author Mordechai Meisels
  */
 public class Configuration {
 
@@ -476,10 +475,9 @@ public class Configuration {
      * It does not have any effect on the behavior of anything else; it is rather
      * just for reference purposes (i.e. "Last Updated: 2 Weeks Ago"), or for
      * clients willing to act according to this value.
-     * 
-     * 
+     *
      * @return The timestamp this configuration was last updated, or @{null}, if
-     *         missing from the XML.
+     * missing from the XML.
      */
     public Instant getTimestamp() {
         return timestamp;
@@ -491,14 +489,14 @@ public class Configuration {
      * framework, as whitespaces or element/attribute order do not matter. Changing
      * element order in lists (i.e. properties or files) do change the ordering in
      * the end-resulting list, and is part of the signature.
-     * 
+     *
      * <p>
      * The {@code timestamp} field is never part of the signature.
-     * 
+     *
      * <p>
      * This field is read from the {@code signature} in the <em>root</em> node. If
      * the attribute is missing this will return {@code null}.
-     * 
+     *
      * @return The signature for this configuration.
      */
     public String getSignature() {
@@ -510,12 +508,12 @@ public class Configuration {
      * files are resolved. The URI points to the remote (or if it has a
      * {@code file:///} scheme, local) location from where the file should be
      * downloaded.
-     * 
-     * 
+     *
+     *
      * <p>
      * This is read from the {@code uri} attribute from the {@code <base>} element.
      * If the attribute is missing this will return {@code null}.
-     * 
+     *
      * @return The base URI, or {@code null} if missing.
      */
     public URI getBaseUri() {
@@ -526,11 +524,11 @@ public class Configuration {
      * Returns the base path against whom all <em>relative</em> paths in individual
      * files are resolved. The path points to the location the files should be saved
      * to on the client's local machine.
-     * 
+     *
      * <p>
      * This is read from the {@code path} attribute from the {@code <base>} element.
      * If the attribute is missing this will return {@code null}.
-     * 
+     *
      * @return The base path, or {@code null} if missing.
      */
     public Path getBasePath() {
@@ -541,12 +539,12 @@ public class Configuration {
      * Returns the {@link UpdateHandler} class name that should be used instead of
      * of the default highest version currently present in the classpath or
      * modulepath.
-     * 
+     *
      * <p>
      * <b>Note:</b> This is completely optional. If this is missing the framework
      * will automatically load the highest version currently present in the
      * classpath or modulepath.
-     * 
+     * <p>
      * Other than overriding the versioning resolution, it also relieves you from
      * having to advertise them as required by the {@link ServiceLoader} class.
      * Still, for modules you would want to add the {@code provides} directive,
@@ -555,15 +553,15 @@ public class Configuration {
      * Please refer to <a
      * href=https://github.com/update4j/update4j/wiki/Documentation#dealing-with-providers>
      * Dealing with Providers</a> for more info.
-     * 
-     * 
+     *
+     *
      * <p>
      * This is read from the {@code updateHandler} attribute from the
      * {@code <provider>} element. If the attribute is missing this will return
      * {@code null}.
-     * 
+     *
      * @return The {@link UpdateHandler} class name that should be used instead of
-     *         of the default highest version, or {@code null} if missing.
+     * of the default highest version, or {@code null} if missing.
      */
     public String getUpdateHandler() {
         return updateHandler;
@@ -572,12 +570,12 @@ public class Configuration {
     /**
      * Returns the {@link Launcher} class name that should be used instead of of the
      * default highest version currently present in the classpath or modulepath.
-     * 
+     *
      * <p>
      * <b>Note:</b> This is completely optional. If this is missing the framework
      * will automatically load the highest version currently present in the
      * classpath or modulepath.
-     * 
+     * <p>
      * Other than overriding the versioning resolution, it also relieves you from
      * having to advertise them as required by the {@link ServiceLoader} class.
      * Still, for modules you would want to add the {@code provides} directive,
@@ -586,14 +584,14 @@ public class Configuration {
      * Please refer to <a
      * href=https://github.com/update4j/update4j/wiki/Documentation#dealing-with-providers>
      * Dealing with Providers</a> for more info.
-     * 
-     * 
+     *
+     *
      * <p>
      * This is read from the {@code launcher} attribute from the {@code <provider>}
      * element. If the attribute is missing this will return {@code null}.
-     * 
+     *
      * @return The {@link Launcher} class name that should be used instead of of the
-     *         default highest version, or {@code null} if missing.
+     * default highest version, or {@code null} if missing.
      */
     public String getLauncher() {
         return launcher;
@@ -602,12 +600,12 @@ public class Configuration {
     /**
      * Returns the list of files listed in the configuration file. This will never
      * return {@code null}.
-     * 
+     *
      * <p>
      * These are read from the {@code <files>} element.
-     * 
+     *
      * @return The {@link FileMetadata} instances listed in the configuration file,
-     *         never {@code null}.
+     * never {@code null}.
      */
     public List<FileMetadata> getFiles() {
         return unmodifiableFiles;
@@ -616,10 +614,10 @@ public class Configuration {
     /**
      * Returns an unmodifiable list of properties listed in the configuration file.
      * This will never return {@code null}.
-     * 
+     *
      * <p>
      * This is read from the {@code <properties>} element.
-     * 
+     *
      * @return The {@link Property} instances listed in the configuration file.
      */
     public List<Property> getProperties() {
@@ -631,13 +629,12 @@ public class Configuration {
      * provided key. It might be more than one, if they have different operating
      * systems. The list will never contain 2 properties with the same value
      * returned by {@link Property#getOs()}.
-     * 
+     *
      * <p>
      * The list might be empty, but never {@code null}.
-     * 
-     * 
+     *
      * @return The {@link Property} instances listed in the configuration file that
-     *         contain the provided key.
+     * contain the provided key.
      */
     public List<Property> getProperties(String key) {
         return propertyManager.getProperties(key);
@@ -648,9 +645,9 @@ public class Configuration {
      * placeholders. It includes everything from dynamic properties to system
      * properties or environment variables. This will not include properties marked
      * for foreign operating systems.
-     * 
+     *
      * @return A map of the keys and real values of the properties, after resolving
-     *         the placeholders.
+     * the placeholders.
      */
     public Map<String, String> getResolvedProperties() {
         return propertyManager.getResolvedProperties();
@@ -660,9 +657,8 @@ public class Configuration {
      * Returns the real value of the property with the given key, after resolving
      * the placeholders. It includes everything from dynamic properties to system
      * properties or environment variables.
-     * 
-     * @param key
-     *            The key of the property.
+     *
+     * @param key The key of the property.
      * @return The real value of the property after resolving the placeholders.
      */
     public String getResolvedProperty(String key) {
@@ -671,10 +667,10 @@ public class Configuration {
 
     /**
      * Returns the dynamic properties passed in {@link #read(Reader, Map)}.
-     * 
+     *
      * <p>
      * If dynamic properties were not passed, it will return an empty map.
-     * 
+     *
      * @return Provided dynamic properties, or empty map.
      */
     public Map<String, String> getDynamicProperties() {
@@ -684,17 +680,15 @@ public class Configuration {
     /**
      * Returns a string where all placeholders are replaced with the real values. If
      * the given string is {@code null}, the same value will be returned.
-     * 
+     *
      * <p>
      * If it includes a reference to a placeholder that could not be resolved, it
      * will fail.
-     * 
-     * @param str
-     *            The source string to try to resolve.
+     *
+     * @param str The source string to try to resolve.
      * @return The resolved string, or {@code null} if {@code null} was passed.
-     * @throws IllegalArgumentException
-     *             if the source string contains a placeholder that could not be
-     *             resolved.
+     * @throws IllegalArgumentException if the source string contains a placeholder that could not be
+     *                                  resolved.
      */
     public String resolvePlaceholders(String str) {
         return propertyManager.resolvePlaceholders(str);
@@ -715,16 +709,15 @@ public class Configuration {
     /**
      * Returns a string with real values replaced with placeholders. This method
      * will never break up words, it acts exactly as:
-     * 
+     *
      * <pre>
      * implyPlaceholders(str, PlaceholderMatchType.WHOLE_WORD);
      * </pre>
-     * 
+     *
      * <p>
      * If the given string is {@code null}, the same value will be returned.
-     * 
-     * @param str
-     *            The string to attempt to replace with placeholders.
+     *
+     * @param str The string to attempt to replace with placeholders.
      * @return The replaced string, or {@code null} if {@code null} was passed.
      */
     public String implyPlaceholders(String str) {
@@ -734,37 +727,35 @@ public class Configuration {
     /**
      * Returns a string with real values replaced with placeholders. This method
      * will never break up words, it acts exactly as:
-     * 
+     *
      * <pre>
      * implyPlaceholders(str, isPath, PlaceholderMatchType.WHOLE_WORD);
      * </pre>
-     * 
+     *
      * <p>
      * This overload allows you to specify whether the given string is a
      * hierarchical string in a path manner. If {@code true}, then {@code "\\"} and
      * {@code "/"} are treated identical. This is intended to match more strings in
      * a platform independent way.
-     * 
+     *
      * <pre>
      * String old = "C:/Users/User/Desktop";
      * String newString = config.implyPlaceholders(old, true);
-     * 
+     *
      * // -> newString is "${user.home}/Desktop" even though the real system
      * // property value is "C:\\Users\\User" on Windows
      * </pre>
-     * 
+     *
      * <p>
      * Additionally, if {@code isPath} is {@code true}, {@code user.home} and
      * {@code user.dir} will only be matched to the beginning of the string or just
      * after the {@code file:} URI scheme in the beginning of the string.
-     * 
+     *
      * <p>
      * If the given string is {@code null}, the same value will be returned.
-     * 
-     * @param str
-     *            The string to attempt to replace with placeholders.
-     * @param isPath
-     *            Whether the given string is a path like string.
+     *
+     * @param str    The string to attempt to replace with placeholders.
+     * @param isPath Whether the given string is a path like string.
      * @return The replaced string, or {@code null} if {@code null} was passed.
      */
     public String implyPlaceholders(String str, boolean isPath) {
@@ -773,7 +764,7 @@ public class Configuration {
 
     /**
      * Returns a string with real values replaced with placeholders.
-     * 
+     *
      * <p>
      * You can specify how matches should be found by passing the
      * {@link PlaceholderMatchType}.
@@ -785,14 +776,12 @@ public class Configuration {
      * <li>{@code FULL_MATCH} &mdash; Will only replace if the complete string
      * matches with one placeholder.</li>
      * </ul>
-     * 
+     *
      * <p>
      * If the given string is {@code null}, the same value will be returned.
-     * 
-     * @param str
-     *            The string to attempt to replace with placeholders.
-     * @param matchType
-     *            The word-breaking policy to use when matching.
+     *
+     * @param str       The string to attempt to replace with placeholders.
+     * @param matchType The word-breaking policy to use when matching.
      * @return The replaced string, or {@code null} if {@code null} was passed.
      */
     public String implyPlaceholders(String str, PlaceholderMatchType matchType) {
@@ -806,20 +795,20 @@ public class Configuration {
      * hierarchical string in a path manner. If {@code true}, then {@code "\\"} and
      * {@code "/"} are treated identical. This is intended to match more strings in
      * a platform independent way.
-     * 
+     *
      * <pre>
      * String old = "C:/Users/User/Desktop";
      * String newString = config.implyPlaceholders(old, true);
-     * 
+     *
      * // -> newString is "${user.home}/Desktop" even though the real system
      * // property value is "C:\\Users\\User" on Windows
      * </pre>
-     * 
+     *
      * <p>
      * Additionally, if {@code isPath} is {@code true}, {@code user.home} and
      * {@code user.dir} will only be matched to the beginning of the string or just
      * after the {@code file:} URI scheme in the beginning of the string.
-     * 
+     *
      * <p>
      * You can specify how matches should be found by passing the
      * {@link PlaceholderMatchType}.
@@ -831,16 +820,13 @@ public class Configuration {
      * <li>{@code FULL_MATCH} &mdash; Will only replace if the complete string
      * matches with one placeholder.</li>
      * </ul>
-     * 
+     *
      * <p>
      * If the given string is {@code null}, the same value will be returned.
-     * 
-     * @param str
-     *            The string to attempt to replace with placeholders.
-     * @param matchType
-     *            The match policy to use.
-     * @param isPath
-     *            Whether the given string is a path like string.
+     *
+     * @param str       The string to attempt to replace with placeholders.
+     * @param matchType The match policy to use.
+     * @param isPath    Whether the given string is a path like string.
      * @return The replaced string, or {@code null} if {@code null} was passed.
      */
     public String implyPlaceholders(String str, PlaceholderMatchType matchType, boolean isPath) {
@@ -856,10 +842,9 @@ public class Configuration {
      * {@link UpdateHandler#shouldCheckForUpdate(FileMetadata)}, i.e. it might
      * return {@code true} even if that method returns {@code false} for a
      * particular file.
-     * 
+     *
      * @return If at-least one file requires an update.
-     * @throws IOException
-     *             If any {@code IOException} arises while reading the files.
+     * @throws IOException If any {@code IOException} arises while reading the files.
      */
     public boolean requiresUpdate() throws IOException {
         for (FileMetadata file : getFiles()) {
@@ -875,40 +860,40 @@ public class Configuration {
      * {@link UpdateOptions#archive(Path)}. Once the update is complete you are free
      * to process the archive to your liking. When you wish to install the update,
      * call {@link Archive#install()}.
-     * 
+     *
      * <p>
      * The update process starts by locating the class returned by
      * {@link UpdateOptions#updateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * If an {@link Injectable} was passed in the options, after loading the
      * {@link UpdateHandler} class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, updateHandler);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * If a {@link PublicKey} was passed to the options, it will use it to validate
      * signatures of each individual file. It will <em>not</em> validate the
      * config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)}. An exception thrown in
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
+     *
      * @param options
      */
     public UpdateResult update(ArchiveUpdateOptions options) {
@@ -920,7 +905,7 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -928,10 +913,10 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
+     *
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -943,7 +928,7 @@ public class Configuration {
     /**
      * Starts the update process by using the provided instance as the update
      * handler.
-     * 
+     *
      * <p>
      * Any error that arises just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -951,12 +936,11 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param handler
-     *            The {@link UpdateHandler} to use for process callbacks.
+     *
+     * @param handler The {@link UpdateHandler} to use for process callbacks.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -970,18 +954,18 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * Immediately after loading the class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, updateHandler);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -989,13 +973,12 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param injectable
-     *            The object to use for field exchange between the bootstrap and the
-     *            update handler.
+     *
+     * @param injectable The object to use for field exchange between the bootstrap and the
+     *                   update handler.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1009,11 +992,11 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1021,12 +1004,11 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
+     *
+     * @param key The {@link PublicKey} to validate the files' signatures.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1040,22 +1022,22 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * Immediately after loading the class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, updateHandler);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1063,15 +1045,13 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
-     * @param injectable
-     *            The object to use for field exchange between the bootstrap and the
-     *            update handler.
+     *
+     * @param key        The {@link PublicKey} to validate the files' signatures.
+     * @param injectable The object to use for field exchange between the bootstrap and the
+     *                   update handler.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1083,11 +1063,11 @@ public class Configuration {
     /**
      * Starts the update process by using the provided instance as the update
      * handler.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1095,14 +1075,12 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
-     * @param handler
-     *            The {@link UpdateHandler} to use for process callbacks.
+     *
+     * @param key     The {@link PublicKey} to validate the files' signatures.
+     * @param handler The {@link UpdateHandler} to use for process callbacks.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1116,11 +1094,11 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1128,13 +1106,12 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
+     *
+     * @param tempDir The location to temporarily store the downloaded files until
+     *                {@link Update#finalizeUpdate(Path)} is called.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1148,22 +1125,22 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * Immediately after loading the class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, updateHandler);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1171,16 +1148,14 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
-     * @param injectable
-     *            The object to use for field exchange between the bootstrap and the
-     *            update handler.
+     *
+     * @param tempDir    The location to temporarily store the downloaded files until
+     *                   {@link Update#finalizeUpdate(Path)} is called.
+     * @param injectable The object to use for field exchange between the bootstrap and the
+     *                   update handler.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1192,11 +1167,11 @@ public class Configuration {
     /**
      * Starts the update process by using the provided instance as the update
      * handler.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * Any error that arises just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1204,15 +1179,13 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
-     * @param handler
-     *            The {@link UpdateHandler} to use for process callbacks.
+     *
+     * @param tempDir The location to temporarily store the downloaded files until
+     *                {@link Update#finalizeUpdate(Path)} is called.
+     * @param handler The {@link UpdateHandler} to use for process callbacks.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1226,15 +1199,15 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1242,15 +1215,13 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
+     *
+     * @param tempDir The location to temporarily store the downloaded files until
+     *                {@link Update#finalizeUpdate(Path)} is called.
+     * @param key     The {@link PublicKey} to validate the files' signatures.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1264,26 +1235,26 @@ public class Configuration {
      * {@link #getUpdateHandler()} or -- if it returns {@code null} -- the
      * registered highest version {@link UpdateHandler} or
      * {@link DefaultUpdateHandler} if non were found.
-     * 
+     *
      * <p>
      * Immediately after loading the class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, updateHandler);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises once the update handler was loaded just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1291,18 +1262,15 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
-     * @param injectable
-     *            The object to use for field exchange between the bootstrap and the
-     *            update handler.
+     *
+     * @param tempDir    The location to temporarily store the downloaded files until
+     *                   {@link Update#finalizeUpdate(Path)} is called.
+     * @param key        The {@link PublicKey} to validate the files' signatures.
+     * @param injectable The object to use for field exchange between the bootstrap and the
+     *                   update handler.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1314,15 +1282,15 @@ public class Configuration {
     /**
      * Starts the update process by using the provided instance as the update
      * handler.
-     * 
+     *
      * <p>
      * It will download all files in the {@code tempDir} directory, which can later
      * be finalized by calling {@link Update#finalizeUpdate(Path)}.
-     * 
+     *
      * <p>
      * It will use the provided {@link PublicKey} to validate signatures of each
      * individual file. It will <em>not</em> validate the config's own signature.
-     * 
+     *
      * <p>
      * Any error that arises just get's passed to
      * {@link UpdateHandler#failed(Throwable)} and this method returns
@@ -1330,17 +1298,14 @@ public class Configuration {
      * {@link UpdateHandler#failed(Throwable)}, {@link UpdateHandler#succeeded()} or
      * {@link UpdateHandler#stop()} will be thrown back to the caller of this
      * method.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param tempDir
-     *            The location to temporarily store the downloaded files until
-     *            {@link Update#finalizeUpdate(Path)} is called.
-     * @param key
-     *            The {@link PublicKey} to validate the files' signatures.
-     * @param handler
-     *            The {@link UpdateHandler} to use for process callbacks.
+     *
+     * @param tempDir The location to temporarily store the downloaded files until
+     *                {@link Update#finalizeUpdate(Path)} is called.
+     * @param key     The {@link PublicKey} to validate the files' signatures.
+     * @param handler The {@link UpdateHandler} to use for process callbacks.
      * @return If no error was thrown in the whole process.
      * @deprecated Superseded with the new archive-based update mechanism.
      */
@@ -1353,20 +1318,19 @@ public class Configuration {
      * Launches the business application by loading all files marked with the
      * {@code classpath} or {@code modulepath} attributes, on their respective
      * paths, dynamically.
-     * 
+     *
      * <p>
      * It will then locate the class returned by {@link #getLauncher()} or -- if it
      * returns {@code null} -- the registered highest version {@link Launcher} or
      * {@link DefaultLauncher} if non were found.
-     * 
+     *
      * <p>
      * It will then call {@link Launcher#run(LaunchContext)} on a new thread, and
      * block the caller of this method until {@code run()} returns. New threads
      * spawned by the {@code run()} method will not block.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
      */
     public void launch() {
         launch((Launcher) null);
@@ -1376,34 +1340,33 @@ public class Configuration {
      * Launches the business application by loading all files marked with the
      * {@code classpath} or {@code modulepath} attributes, on their respective
      * paths, dynamically.
-     * 
+     *
      * <p>
      * It will then locate the class returned by {@link #getLauncher()} or -- if it
      * returns {@code null} -- the registered highest version {@link Launcher} or
      * {@link DefaultLauncher} if non were found.
-     * 
+     *
      * <p>
      * Immediately after loading the class, it will call:
-     * 
+     *
      * <pre>
      * Injectable.injectBidirectional(injectable, launcher);
      * </pre>
-     * 
+     * <p>
      * to exchange fields to and from both instances. When injection is complete it
      * will call all methods of both instances, marked with {@link PostInject},
      * following the behavior documented in {@link Injectable} documentation.
-     * 
+     *
      * <p>
      * It will then call {@link Launcher#run(LaunchContext)} on a new thread, and
      * block the caller of this method until {@code run()} returns. New threads
      * spawned by the {@code run()} method will not block.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param injectable
-     *            The object to use for field exchange between the bootstrap and the
-     *            launcher.
+     *
+     * @param injectable The object to use for field exchange between the bootstrap and the
+     *                   launcher.
      */
     public void launch(Injectable injectable) {
         ConfigImpl.doLaunch(this, injectable, null);
@@ -1413,17 +1376,16 @@ public class Configuration {
      * Launches the business application by loading all files marked with the
      * {@code classpath} or {@code modulepath} attributes, on their respective
      * paths, dynamically.
-     * 
+     *
      * <p>
      * It will then call {@link Launcher#run(LaunchContext)} on a new thread, and
      * block the caller of this method until {@code run()} returns. New threads
      * spawned by the {@code run()} method will not block.
-     * 
+     *
      * <p>
      * This method is intended to be used on the client machine only.
-     * 
-     * @param launcher
-     *            The launcher to use as the business application entry point
+     *
+     * @param launcher The launcher to use as the business application entry point
      */
     public void launch(Launcher launcher) {
         ConfigImpl.doLaunch(this, null, launcher);
@@ -1432,7 +1394,7 @@ public class Configuration {
     /**
      * Convenience method to delete files only present in {@code oldConfig} and
      * clean up app directory.
-     * 
+     *
      * <p>
      * <b>Caution:</b> This method does not guarantee all files are actually
      * removed. Many things can go wrong and new updates should <em>never</em> rely
@@ -1441,11 +1403,11 @@ public class Configuration {
      * if the old "should" be deleted here. For service providers, increment the
      * {@code version()} to let update4j know it should select the new, even if the
      * old is deleted here.
-     * 
-     * 
+     *
+     *
      * <p>
      * A file in the old configuration is considered "old" if that file:
-     * 
+     *
      * <ul>
      * <li>Exists.</li>
      * <li>Is not present in the current configuration. It will query the underlying
@@ -1455,7 +1417,7 @@ public class Configuration {
      * being deleted. You can turn off this check by calling
      * {@link #deleteOldFiles(Configuration, boolean, int)} instead.
      * </ul>
-     * 
+     *
      * <p>
      * Files that are not marked with either {@code classpath} or {@code modulepath}
      * in the config, will be assumed to run in the bootstrap; therefore will not be
@@ -1467,20 +1429,20 @@ public class Configuration {
      * immediately. If it fails (e.g. you called this method from the business
      * application and the files are locked by operating system), it will queue them
      * together with the bootstrap files.
-     * 
+     *
      * <p>
      * Please note: Long running shutdown hooks may keep files locked thus
      * preventing them from being deleted. Call
      * {@link #deleteOldFiles(Configuration, boolean, int)} and increase the
      * {@code secondsDelay} to ensure it runs after all shutdown hooks completed.
-     * 
+     *
      * <p>
      * You <em>must</em> not call this method if:
-     * 
+     *
      * <pre>
      * this.requiresUpdate() == true
      * </pre>
-     * 
+     * <p>
      * in other words, you must first update the current config, or if using
      * {@code updateTemp()} you must first call {@link Update#finalizeUpdate(Path)}.
      * If you return {@code false} in
@@ -1489,16 +1451,12 @@ public class Configuration {
      * config to strip those files by removing them with
      * {@link #generateXmlMapper()}. Consult the <em>Manual XML Manipulation</em>
      * section in this class JavaDoc.
-     * 
-     * 
-     * @param oldConfig
-     *            The old configuration.
-     * @throws IllegalStateException
-     *             If this method is called but the current configuration is not
-     *             up-to-date.
-     * @throws IOException
-     *             If checking if current config is up-to-date, checking file
-     *             equality, or calculating checksum failed.
+     *
+     * @param oldConfig The old configuration.
+     * @throws IllegalStateException If this method is called but the current configuration is not
+     *                               up-to-date.
+     * @throws IOException           If checking if current config is up-to-date, checking file
+     *                               equality, or calculating checksum failed.
      */
     public void deleteOldFiles(Configuration oldConfig) throws IOException {
         deleteOldFiles(oldConfig, true, 5);
@@ -1507,7 +1465,7 @@ public class Configuration {
     /**
      * Convenience method to delete files only present in {@code oldConfig} and
      * clean up app directory.
-     * 
+     *
      * <p>
      * <b>Caution:</b> This method does not guarantee all files are actually
      * removed. Many things can go wrong and new updates should <em>never</em> rely
@@ -1516,10 +1474,10 @@ public class Configuration {
      * if the old "should" be deleted here. For service providers, increment the
      * {@code version()} to let update4j know it should select the new, even if the
      * old is deleted here.
-     * 
+     *
      * <p>
      * A file in the old configuration is considered "old" if that file:
-     * 
+     *
      * <ul>
      * <li>Exists.</li>
      * <li>Is not present in the current configuration. It will query the underlying
@@ -1528,7 +1486,7 @@ public class Configuration {
      * matches the checksum listed in the old config. This is an extra - optional -
      * layer of safety to prevent unwanted files from being deleted.
      * </ul>
-     * 
+     *
      * <p>
      * Files that are not marked with either {@code classpath} or {@code modulepath}
      * in the config, will be assumed to run in the bootstrap; therefore will not be
@@ -1539,20 +1497,20 @@ public class Configuration {
      * If it fails (e.g. you called this method from the business application and
      * the files are locked by operating system), it will queue them together with
      * the bootstrap files.
-     * 
+     *
      * <p>
      * Please note: Long running shutdown hooks may keep files locked thus
      * preventing them from being deleted. Increase the {@code secondsDelay} to
      * ensure it runs after all shutdown hooks completed. {@code secondsDelay} will
      * never be less than 1; smaller values will be adjusted.
-     * 
+     *
      * <p>
      * You <em>must</em> not call this method if:
-     * 
+     *
      * <pre>
      * this.requiresUpdate() == true
      * </pre>
-     * 
+     * <p>
      * in other words, you must first update the current config, or if using
      * {@code updateTemp()} you must first call {@link Update#finalizeUpdate(Path)}.
      * If you return {@code false} in
@@ -1561,21 +1519,15 @@ public class Configuration {
      * config to strip those files by removing them with
      * {@link #generateXmlMapper()}. Consult the <em>Manual XML Manipulation</em>
      * section in this class JavaDoc.
-     * 
-     * 
-     * @param oldConfig
-     *            The old configuration.
-     * @param matchChecksum
-     *            Whether checksums should be checked and delete only if matching.
-     * @param secondsDelay
-     *            Second to delay deletion after JVM shut down. If less the 1, it
-     *            will be adjusted to 1.
-     * @throws IllegalStateException
-     *             If this method is called but the current configuration is not
-     *             up-to-date.
-     * @throws IOException
-     *             If checking if current config is up-to-date, checking file
-     *             equality, or calculating checksum failed.
+     *
+     * @param oldConfig     The old configuration.
+     * @param matchChecksum Whether checksums should be checked and delete only if matching.
+     * @param secondsDelay  Second to delay deletion after JVM shut down. If less the 1, it
+     *                      will be adjusted to 1.
+     * @throws IllegalStateException If this method is called but the current configuration is not
+     *                               up-to-date.
+     * @throws IOException           If checking if current config is up-to-date, checking file
+     *                               equality, or calculating checksum failed.
      */
     public void deleteOldFiles(Configuration oldConfig, boolean matchChecksum, int secondsDelay) throws IOException {
         if (requiresUpdate()) {
@@ -1607,11 +1559,11 @@ public class Configuration {
     /**
      * Returns a list of files of old files present in {@code oldConfig} but not in
      * the current.
-     * 
-     * 
+     *
+     *
      * <p>
      * A file in the old configuration is considered "old" if that file:
-     * 
+     *
      * <ul>
      * <li>Exists.</li>
      * <li>Is not present in the current configuration. It will query the underlying
@@ -1619,37 +1571,36 @@ public class Configuration {
      * <li>If {@code matchChecksum} is {@code true} &mdash; if the file's checksum
      * matches the checksum listed in the old config.
      * </ul>
-     * 
+     *
      * <p>
      * Old files are assumed safe to be removed with
      * {@link #deleteOldFiles(Configuration, boolean, int)}.
-     * 
-     * 
-     * @param oldConfig
-     *            The old configuration.
-     * @param matchChecksum
-     *            Whether checksums should be matching in order to consider it old.
+     *
+     * @param oldConfig     The old configuration.
+     * @param matchChecksum Whether checksums should be matching in order to consider it old.
      * @return A list of old files.
-     * @throws IOException
-     *             If checking file equality, or calculating checksum failed.
+     * @throws IOException If checking file equality, or calculating checksum failed.
      */
     public List<FileMetadata> getOldFiles(Configuration oldConfig, boolean matchChecksum) throws IOException {
         List<FileMetadata> oldFiles = new ArrayList<>();
 
-        outer: for (FileMetadata file : oldConfig.getFiles()) {
+        outer:
+        for (FileMetadata file : oldConfig.getFiles()) {
             if (!Files.exists(file.getPath())) {
                 continue;
             }
-            
-            if(getFiles().stream().anyMatch(f -> (f.getOs() == null || f.getOs() == OS.CURRENT) && f.getPath().equals(file.getPath()))) {
+
+            if (getFiles().stream().anyMatch(f -> (f.getOs() == null || f.getOs() == OS.CURRENT) && (f.getArch() == null || f.getArch() == Arch.CURRENT) && f.getPath().equals(file.getPath()))) {
                 continue;
             }
 
             // at this point this path isn't present in the new config, let's rule out symlinks
             for (FileMetadata newFile : getFiles()) {
                 if (newFile.getOs() == null || newFile.getOs() == OS.CURRENT) {
-                    if (Files.isSameFile(newFile.getPath(), file.getPath())) {
-                        continue outer;
+                    if (newFile.getArch() == null || newFile.getArch() == Arch.CURRENT) {
+                        if (Files.isSameFile(newFile.getPath(), file.getPath())) {
+                            continue outer;
+                        }
                     }
                 }
             }
@@ -1667,12 +1618,10 @@ public class Configuration {
 
     /**
      * Reads and parses a configuration XML.
-     * 
-     * @param reader
-     *            The {@code Reader} for reading the XML.
+     *
+     * @param reader The {@code Reader} for reading the XML.
      * @return A {@code Configuration} as parsed from the given XML.
-     * @throws IOException
-     *             Any exception that arises while reading.
+     * @throws IOException Any exception that arises while reading.
      */
     public static Configuration read(Reader reader) throws IOException {
         return read(reader, (Map<String, String>) null);
@@ -1680,15 +1629,12 @@ public class Configuration {
 
     /**
      * Reads and parses a configuration XML, and add the provided properties.
-     * 
-     * @param reader
-     *            The {@code Reader} for reading the XML.
-     * @param dynamicProperties
-     *            Unlisted properties to override listed properties or to map
-     *            unmapped placeholders.
+     *
+     * @param reader            The {@code Reader} for reading the XML.
+     * @param dynamicProperties Unlisted properties to override listed properties or to map
+     *                          unmapped placeholders.
      * @return A {@code Configuration} as parsed from the given XML.
-     * @throws IOException
-     *             Any exception that arises while reading.
+     * @throws IOException Any exception that arises while reading.
      */
     public static Configuration read(Reader reader, Map<String, String> dynamicProperties) throws IOException {
         return doRead(reader, dynamicProperties);
@@ -1697,19 +1643,15 @@ public class Configuration {
     /**
      * Reads and parses a configuration XML, then verifies the configuration
      * signature against the public key.
-     * 
-     * @param reader
-     *            The {@code Reader} for reading the XML.
-     * @param dynamicProperties
-     *            Unlisted properties to override listed properties or to map
-     *            unmapped placeholders.
+     *
+     * @param reader            The {@code Reader} for reading the XML.
+     * @param dynamicProperties Unlisted properties to override listed properties or to map
+     *                          unmapped placeholders.
      * @return A {@code
      * Configuration} as parsed from the given XML.
-     * @throws IOException
-     *             Any exception that arises while reading.
-     * @throws SecurityException
-     *             If the configuration does not have a signature, or if
-     *             verification failed.
+     * @throws IOException       Any exception that arises while reading.
+     * @throws SecurityException If the configuration does not have a signature, or if
+     *                           verification failed.
      */
     public static Configuration read(Reader reader, PublicKey key) throws IOException {
         return read(reader, key, null);
@@ -1718,24 +1660,19 @@ public class Configuration {
     /**
      * Reads and parses a configuration XML and add more properties, then verifies
      * the configuration signature against the public key.
-     * 
-     * @param reader
-     *            The {@code Reader} for reading the XML.
-     * @param key
-     *            The public key to verify the config's signature against.
-     * @param dynamicProperties
-     *            Unlisted properties to override listed properties or to map
-     *            unmapped placeholders.
+     *
+     * @param reader            The {@code Reader} for reading the XML.
+     * @param key               The public key to verify the config's signature against.
+     * @param dynamicProperties Unlisted properties to override listed properties or to map
+     *                          unmapped placeholders.
      * @return A {@code
      * Configuration} as parsed from the given XML.
-     * @throws IOException
-     *             Any exception that arises while reading.
-     * @throws SecurityException
-     *             If the configuration does not have a signature, or if
-     *             verification failed.
+     * @throws IOException       Any exception that arises while reading.
+     * @throws SecurityException If the configuration does not have a signature, or if
+     *                           verification failed.
      */
     public static Configuration read(Reader reader, PublicKey key, Map<String, String> dynamicProperties)
-                    throws IOException {
+            throws IOException {
         Configuration config = doRead(reader, dynamicProperties);
         config.verifyConfiguration(key);
 
@@ -1750,9 +1687,8 @@ public class Configuration {
 
     /**
      * Parses a configuration from the given XML mapper.
-     * 
-     * @param mapper
-     *            The mapper to parse.
+     *
+     * @param mapper The mapper to parse.
      * @return A {@code Configuration} as parsed from the mapper.
      */
 
@@ -1763,12 +1699,10 @@ public class Configuration {
     /**
      * Parses a configuration from the given XML mapper, and add the provided
      * properties.
-     * 
-     * @param mapper
-     *            The mapper to parse.
-     * @param dynamicProperties
-     *            Unlisted properties to override listed properties or to map
-     *            unmapped placeholders.
+     *
+     * @param mapper            The mapper to parse.
+     * @param dynamicProperties Unlisted properties to override listed properties or to map
+     *                          unmapped placeholders.
      * @return A {@code Configuration} as parsed from the mapper.
      */
 
@@ -1819,8 +1753,8 @@ public class Configuration {
 
         for (FileMapper fm : configMapper.files) {
             FileMetadata.Builder fileBuilder = FileMetadata.builder()
-                            .baseUri(config.getBaseUri())
-                            .basePath(config.getBasePath());
+                    .baseUri(config.getBaseUri())
+                    .basePath(config.getBasePath());
 
             if (fm.uri != null) {
                 String s = config.resolvePlaceholders(fm.uri, true, fm.os != null && fm.os != OS.CURRENT);
@@ -1869,12 +1803,12 @@ public class Configuration {
             for (FileMetadata prevFile : files) {
                 // if any path is null (by referencing foreign property), ignore
                 if ((prevFile.getPath() != null && file.getPath() != null)
-                                // files do not have cascading as properties, so if 
-                                // at least one is null, OR both are non-null but same os
-                                && ((prevFile.getOs() == null || file.getOs() == null)
-                                                || prevFile.getOs() == file.getOs())
-                                // and have same paths, throw exception
-                                && prevFile.getPath().equals(file.getPath())) {
+                        // files do not have cascading as properties, so if
+                        // at least one is null, OR both are non-null but same os
+                        && ((prevFile.getOs() == null || file.getOs() == null)
+                        || prevFile.getOs() == file.getOs())
+                        // and have same paths, throw exception
+                        && prevFile.getPath().equals(file.getPath())) {
                     throw new IllegalStateException("2 files resolve to same 'path': " + file.getPath());
                 }
             }
@@ -1892,21 +1826,20 @@ public class Configuration {
      * Returns a new {@code Configuration} where all file sizes and checksums are
      * synced with the real locations as listed in the current config. If changes
      * were made it will also update the {@code timestamp}.
-     * 
+     *
      * <p>
      * This method is intended to be used on the development/build machine only to
      * draft a new release when changes are made to files but it's still the same
      * files.
-     * 
+     *
      * <p>
      * If you want to change the files you should generally use the Builder API. If
      * you want, you can manually add or remove files in the config file; for new
      * files, just put the {@code path} and call sync to automatically fill the
      * rest.
-     * 
+     *
      * @return A new {@code Configuration} with synced file metadata.
-     * @throws IOException
-     *             If any exception arises while reading file metadata.
+     * @throws IOException If any exception arises while reading file metadata.
      */
     public Configuration sync() throws IOException {
         return sync(null, null);
@@ -1919,23 +1852,21 @@ public class Configuration {
      * the build output location. Files listed with an explicit absolute path will
      * not be overriden. If changes were made it will also update the
      * {@code timestamp}.
-     * 
+     *
      * <p>
      * This method is intended to be used on the development/build machine only to
      * draft a new release when changes are made to files but it's still the same
      * files.
-     * 
+     *
      * <p>
      * If you want to change the files you should generally use the Builder API. If
      * you want, you can manually add or remove files in the config file; for new
      * files, just put the {@code path} and call sync to automatically fill the
      * rest.
-     * 
-     * @param overrideBasePath
-     *            The {@code Path} to use instead of the base path to lookup files.
+     *
+     * @param overrideBasePath The {@code Path} to use instead of the base path to lookup files.
      * @return A new {@code Configuration} with synced file metadata.
-     * @throws IOException
-     *             If any exception arises while reading file metadata
+     * @throws IOException If any exception arises while reading file metadata
      */
     public Configuration sync(Path overrideBasePath) throws IOException {
         return sync(overrideBasePath, null);
@@ -1945,23 +1876,21 @@ public class Configuration {
      * Returns a new {@code Configuration} where all file sizes, checksums and
      * signatures are synced with the real locations as listed in the current
      * config. If changes were made it will also update the {@code timestamp}.
-     * 
+     *
      * <p>
      * This method is intended to be used on the development/build machine only to
      * draft a new release when changes are made to files but it's still the same
      * files.
-     * 
+     *
      * <p>
      * If you want to change the files you should generally use the Builder API. If
      * you want, you can manually add or remove files in the config file; for new
      * files, just put the {@code path} and call sync to automatically fill the
      * rest.
-     * 
-     * @param signer
-     *            The {@link PrivateKey} to use for config and file signing.
+     *
+     * @param signer The {@link PrivateKey} to use for config and file signing.
      * @return A new {@code Configuration} with synced file metadata.
-     * @throws IOException
-     *             If any exception arises while reading file metadata.
+     * @throws IOException If any exception arises while reading file metadata.
      */
     public Configuration sync(PrivateKey signer) throws IOException {
         return sync(null, signer);
@@ -1974,25 +1903,22 @@ public class Configuration {
      * used to point to the build output location. Files listed with an explicit
      * absolute path will not be overriden. If changes were made it will also update
      * the {@code timestamp}.
-     * 
+     *
      * <p>
      * This method is intended to be used on the development/build machine only to
      * draft a new release when changes are made to files but it's still the same
      * files.
-     * 
+     *
      * <p>
      * If you want to change the files you should generally use the Builder API. If
      * you want, you can manually add or remove files in the config file; for new
      * files, just put the {@code path} and call sync to automatically fill the
      * rest.
-     * 
-     * @param overrideBasePath
-     *            The {@code Path} to use instead of the base path to lookup files.
-     * @param signer
-     *            The {@link PrivateKey} to use for config and file signing.
+     *
+     * @param overrideBasePath The {@code Path} to use instead of the base path to lookup files.
+     * @param signer           The {@link PrivateKey} to use for config and file signing.
      * @return A new {@code Configuration} with synced file metadata.
-     * @throws IOException
-     *             If any exception arises while reading file metadata
+     * @throws IOException If any exception arises while reading file metadata
      */
     public Configuration sync(Path overrideBasePath, PrivateKey signer) throws IOException {
         ConfigMapper newMapper = generateXmlMapper();
@@ -2049,12 +1975,11 @@ public class Configuration {
      * Verifies this config against this public key and throws a
      * {@code SecurityException} if the config doesn't have a signature or if
      * verification failed.
-     * 
+     *
      * <p>
      * This process does <em>not</em> check individual file signatures.
-     * 
-     * @param key
-     *            The public key to check against.
+     *
+     * @param key The public key to check against.
      */
     public void verifyConfiguration(PublicKey key) {
         mapper.verifySignature(key);
@@ -2063,15 +1988,15 @@ public class Configuration {
     /**
      * Generates a new XML mapper for direct XML manipulation with values populated
      * identical to this configuration. More formally:
-     * 
+     *
      * <pre>
      * this.equals(Configuration.parse(this.generateXmlMapper())) == true
      * </pre>
-     * 
+     *
      * <p>
      * Any change to the mapper has no effect to the current configuration. A new
      * copy is created on each call.
-     * 
+     *
      * @return A new XML mapper with values from this configuration.
      */
     public ConfigMapper generateXmlMapper() {
@@ -2084,7 +2009,7 @@ public class Configuration {
 
     /**
      * Returns an XML string exactly as {@link #write(Writer)} would output.
-     * 
+     *
      * @return An XML string exactly as {@link #write(Writer)} would output.
      */
     @Override
@@ -2101,11 +2026,11 @@ public class Configuration {
 
     /**
      * Returns whether the given configuration is equals to this. More formally:
-     * 
+     *
      * <pre>
      * this.equals(other) == this.toString().equals(other.toString())
      * </pre>
-     * 
+     *
      * @return Whether the given configuration is equals to this.
      */
     @Override
@@ -2129,12 +2054,12 @@ public class Configuration {
 
     /**
      * The entry point to the Builder API.
-     * 
+     *
      * <p>
      * This should <em>only</em> be used on the development/build machine when
      * drafting a new release. It should not be used to load a config on the client
      * side.
-     * 
+     *
      * @return A configuration builder.
      */
     public static Builder builder() {
@@ -2145,7 +2070,7 @@ public class Configuration {
      * This class is used to generate new configurations when a new draft is
      * released. This might be called directly in code or used in various build
      * plugins.
-     * 
+     *
      * <p>
      * In the builder process you refer to actual files on your machine, it will
      * read the file metadata and create a new configuration. With the exceptions of
@@ -2153,34 +2078,31 @@ public class Configuration {
      * {@link FileMetadata#streamDirectory(String)} all string methods may take
      * placeholder values that may refer to dynamic properties, listed properties,
      * system properties or system environment variables.
-     * 
+     *
      * <p>
      * To refer to a property {@code my.prop} with the value {@code Hello}:
-     * 
+     *
      * <pre>
      * "${my.prop} World!" -> "Hello World"
      * </pre>
-     * 
+     *
      * <p>
      * Or, on Windows:
-     * 
+     *
      * <pre>
      * "${LOCALAPPDATA}/My App" -> "C:/Users/&lt;user-name&gt;/AppData/Local/My App"
      * </pre>
-     * 
+     *
      * <p>
      * Placeholder references are resolved when {@code build()} is called.
-     * 
+     *
      * <p>
      * If a string has a value that can be replaced with a property placeholder but
      * was hardcoded, it will be replaced for you. You can control how to replace
      * via {@link #matchAndReplace(PlaceholderMatchType)} in both the config and in
      * each individual file.
-     * 
-     * 
-     * 
-     * @author Mordechai Meisels
      *
+     * @author Mordechai Meisels
      */
     public static class Builder {
         private String baseUri;
@@ -2210,15 +2132,14 @@ public class Configuration {
         /**
          * Set the base URI that files with a relative {@code uri} should resolve
          * against. Files with an absolute URI will ignore this field.
-         * 
+         *
          * <p>
          * You may use a placeholder value for this field.
-         * 
+         *
          * <p>
          * If this is not set, all files <em>must</em> have an absolute URI.
-         * 
-         * @param uri
-         *            The base URI that files with a relative {@code uri} should resolve
+         *
+         * @param uri The base URI that files with a relative {@code uri} should resolve
          *            against.
          * @return The builder for chaining.
          */
@@ -2231,19 +2152,18 @@ public class Configuration {
         /**
          * Set the base URI that files with a relative {@code uri} should resolve
          * against. Files with an absolute URI will ignore this field.
-         * 
+         *
          * <p>
          * This is equivalent to:
-         * 
+         *
          * <pre>
          * baseUri(uri.toString())
          * </pre>
-         * 
+         *
          * <p>
          * If this is not set, all files <em>must</em> have an absolute URI.
-         * 
-         * @param uri
-         *            The base URI that files with a relative {@code uri} should resolve
+         *
+         * @param uri The base URI that files with a relative {@code uri} should resolve
          *            against.
          * @return The builder for chaining.
          */
@@ -2254,7 +2174,7 @@ public class Configuration {
 
         /**
          * Returns the value passed in {@link #baseUri(String)}.
-         * 
+         *
          * @return The value passed in {@link #baseUri(String)}.
          */
         public String getBaseUri() {
@@ -2264,16 +2184,15 @@ public class Configuration {
         /**
          * Set the base path that files with a relative {@code path} should resolve
          * against. Files with an absolute path will ignore this field.
-         * 
+         *
          * <p>
          * You may use a placeholder value for this field.
-         * 
+         *
          * <p>
          * If this is not set, all files <em>must</em> have an absolute path.
-         * 
-         * @param path
-         *            The base path that files with a relative {@code path} should
-         *            resolve against.
+         *
+         * @param path The base path that files with a relative {@code path} should
+         *             resolve against.
          * @return The builder for chaining.
          */
         public Builder basePath(String path) {
@@ -2285,20 +2204,19 @@ public class Configuration {
         /**
          * Set the base path that files with a relative {@code path} should resolve
          * against. Files with an absolute path will ignore this field.
-         * 
+         *
          * <p>
          * This is equivalent to:
-         * 
+         *
          * <pre>
          * basePath(path.toString())
          * </pre>
-         * 
+         *
          * <p>
          * If this is not set, all files <em>must</em> have an absolute path.
-         * 
-         * @param path
-         *            The base path that files with a relative {@code path} should
-         *            resolve against.
+         *
+         * @param path The base path that files with a relative {@code path} should
+         *             resolve against.
          * @return The builder for chaining.
          */
         public Builder basePath(Path path) {
@@ -2308,7 +2226,7 @@ public class Configuration {
 
         /**
          * Returns the value passed in {@link #basePath(String)}.
-         * 
+         *
          * @return The value passed in {@link #basePath(String)}.
          */
         public String getBasePath() {
@@ -2318,9 +2236,8 @@ public class Configuration {
         /**
          * Set the private key to use for configuration and file signing. If not set,
          * they will not be signed.
-         * 
-         * @param key
-         *            the {@link PrivateKey} for file signing.
+         *
+         * @param key the {@link PrivateKey} for file signing.
          * @return The builder for chaining.
          */
         public Builder signer(PrivateKey key) {
@@ -2333,19 +2250,15 @@ public class Configuration {
          * Convenience method to load the private key from a Java Keystore at the given
          * path with the given keypair alias, using the keystore and alias passwords.
          * Once loaded, it will forward the private key to {@link #signer(PrivateKey)}.
-         * 
+         *
          * <p>
          * It wraps all checked exceptions in a {@code RuntimeException} to keep the
          * chaining clean.
-         * 
-         * @param path
-         *            The location of the keystore.
-         * @param keystorePass
-         *            The password of the keystore.
-         * @param alias
-         *            The alias of the keypair.
-         * @param aliasPass
-         *            The alias password, or {@code null}.
+         *
+         * @param path         The location of the keystore.
+         * @param keystorePass The password of the keystore.
+         * @param alias        The alias of the keypair.
+         * @param aliasPass    The alias password, or {@code null}.
          * @return The builder for chaining.
          */
         public Builder signer(Path path, char[] keystorePass, String alias, char[] aliasPass) {
@@ -2365,26 +2278,22 @@ public class Configuration {
          * path string with the given keypair alias, using the keystore and alias
          * passwords. Once loaded, it will forward the private key to
          * {@link #signer(PrivateKey)}.
-         * 
+         *
          * <p>
          * This method is equivalent to calling:
-         * 
+         *
          * <pre>
          * signer(Paths.get(path), keystorePass, alias, aliasPass);
          * </pre>
-         * 
+         *
          * <p>
          * It wraps all checked exceptions in a {@code RuntimeException} to keep the
          * chaining clean.
-         * 
-         * @param path
-         *            The location of the keystore.
-         * @param keystorePass
-         *            The password of the keystore.
-         * @param alias
-         *            The alias of the keypair.
-         * @param aliasPass
-         *            The alias password, or {@code null}.
+         *
+         * @param path         The location of the keystore.
+         * @param keystorePass The password of the keystore.
+         * @param alias        The alias of the keypair.
+         * @param aliasPass    The alias password, or {@code null}.
          * @return The builder for chaining.
          */
         public Builder signer(String path, char[] keystorePass, String alias, char[] aliasPass) {
@@ -2396,17 +2305,14 @@ public class Configuration {
          * default keystore location (<code>${user.home}/.keystore</code>) with the
          * given keypair alias, using the keystore and alias passwords. Once loaded, it
          * will forward the private key to {@link #signer(PrivateKey)}.
-         * 
+         *
          * <p>
          * It wraps all checked exceptions in a {@code RuntimeException} to keep the
          * chaining clean.
-         * 
-         * @param keystorePass
-         *            The password of the keystore.
-         * @param alias
-         *            The alias of the keypair.
-         * @param aliasPass
-         *            The alias password, or {@code null}.
+         *
+         * @param keystorePass The password of the keystore.
+         * @param alias        The alias of the keypair.
+         * @param aliasPass    The alias password, or {@code null}.
          * @return The builder for chaining.
          */
         public Builder signer(char[] keystorePass, String alias, char[] aliasPass) {
@@ -2415,7 +2321,7 @@ public class Configuration {
 
         /**
          * Returns the value passed in {@link #signer(PrivateKey)}.
-         * 
+         *
          * @return The value passed in {@link #signer(PrivateKey)}.
          */
         public PrivateKey getSigner() {
@@ -2426,12 +2332,11 @@ public class Configuration {
          * List a single file in the configuration. Files are listed using
          * {@link FileMetadata#readFrom(Path)}. You can customize the individual file
          * with the value returned from {@code readFrom()}.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a list.
-         * 
-         * @param reference
-         *            A file reference to list in the configuration.
+         *
+         * @param reference A file reference to list in the configuration.
          * @return The builder for chaining.
          */
         public Builder file(FileMetadata.Reference reference) {
@@ -2442,12 +2347,11 @@ public class Configuration {
 
         /**
          * List a collection of files in the configuration.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * @param refs
-         *            A collection of file references to list in the configuration.
+         *
+         * @param refs A collection of file references to list in the configuration.
          * @return The builder for chaining.
          */
         public Builder files(Collection<FileMetadata.Reference> refs) {
@@ -2460,12 +2364,11 @@ public class Configuration {
          * List a stream of {@link FileMetadata} instances in the configuration. Streams
          * can be created using {@link FileMetadata#streamDirectory(Path)} and
          * customized using {@code peek()} or {@code map()}.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * @param fileStream
-         *            A stream of file references to list in the configuration.
+         *
+         * @param fileStream A stream of file references to list in the configuration.
          * @return The builder for chaining.
          */
         public Builder files(Stream<FileMetadata.Reference> fileStream) {
@@ -2476,7 +2379,7 @@ public class Configuration {
 
         /**
          * Returns all files listed via {@code file()} or {@code files()}.
-         * 
+         *
          * @return All files listed via {@code file()} or {@code files()}.
          */
         public List<FileMetadata.Reference> getFiles() {
@@ -2486,15 +2389,12 @@ public class Configuration {
         /**
          * List a single property with the given key and value. The value may contain a
          * placeholder.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * 
-         * @param key
-         *            The key of the property.
-         * @param value
-         *            The value of the property.
+         *
+         * @param key   The key of the property.
+         * @param value The value of the property.
          * @return The builder for chaining.
          */
         public Builder property(String key, String value) {
@@ -2505,20 +2405,16 @@ public class Configuration {
          * List a single property with the given key and value that should only resolve
          * for the given operating system. You may have more than one property with the
          * same key if non of them have the same os.
-         * 
+         *
          * <p>
          * The value may contain placeholders.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * 
-         * @param key
-         *            The key of the property.
-         * @param value
-         *            The value of the property.
-         * @param os
-         *            The operating system to limit this property.
+         *
+         * @param key   The key of the property.
+         * @param value The value of the property.
+         * @param os    The operating system to limit this property.
          * @return The builder for chaining.
          */
         public Builder property(String key, String value, OS os) {
@@ -2529,12 +2425,11 @@ public class Configuration {
 
         /**
          * Lists a single {@link Property} in the configuration.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * @param p
-         *            The property to list.
+         *
+         * @param p The property to list.
          * @return The builder for chaining.
          */
         public Builder property(Property p) {
@@ -2545,12 +2440,11 @@ public class Configuration {
 
         /**
          * List a collection of properties in the configuration.
-         * 
+         *
          * <p>
          * This method can be called repeatedly. It will add them all to a single list.
-         * 
-         * @param props
-         *            The collection of properties to list.
+         *
+         * @param props The collection of properties to list.
          * @return The builder for chaining.
          */
         public Builder properties(Collection<Property> props) {
@@ -2562,7 +2456,7 @@ public class Configuration {
         /**
          * Returns all properties listed via {@code property()} or {@code properties()}.
          * Changes affects the actual list.
-         * 
+         *
          * @return All properties listed via {@code property()} or {@code properties()}.
          */
         public List<Property> getProperties() {
@@ -2575,23 +2469,20 @@ public class Configuration {
          * the config is built. The {@link Configuration#read(Reader, Map)} and
          * {@link Configuration#parse(ConfigMapper, Map)} can be used on the client side
          * to map those properties.
-         * 
+         *
          * <p>
          * A dynamic property has higher precedence than a listed property, thus can be
          * used to override the value of listed properties.
-         * 
+         *
          * <p>
          * The value may contain placeholders.
-         * 
+         *
          * <p>
          * This method can be called repeatedly, it will add them all to a single map.
          * The key or value must not be {@code null}.
-         * 
-         * 
-         * @param key
-         *            The key of the dynamic property.
-         * @param value
-         *            The value of the dynamic property.
+         *
+         * @param key   The key of the dynamic property.
+         * @param value The value of the dynamic property.
          * @return The builder for chaining.
          */
         public Builder dynamicProperty(String key, String value) {
@@ -2607,21 +2498,19 @@ public class Configuration {
          * {@link Configuration#read(Reader, Map)} and
          * {@link Configuration#parse(ConfigMapper, Map)} can be used on the client side
          * to map those properties.
-         * 
+         *
          * <p>
          * A dynamic property has higher precedence than a listed property, thus can be
          * used to override the value of listed properties.
-         * 
+         *
          * <p>
          * The values may contain placeholders.
-         * 
+         *
          * <p>
          * This method can be called repeatedly, it will add them all to a single map.
          * The key or value must not be {@code null}.
-         * 
-         * 
-         * @param dynamics
-         *            A map of dynamic properties.
+         *
+         * @param dynamics A map of dynamic properties.
          * @return The builder for chaining.
          */
         public Builder dynamicProperties(Map<String, String> dynamics) {
@@ -2633,7 +2522,7 @@ public class Configuration {
         /**
          * Returns the map that collects the dynamic properties. Changes will affect the
          * actual map.
-         * 
+         *
          * @return The map of collected dynamic properties.
          */
         public Map<String, String> getDynamicProperties() {
@@ -2643,13 +2532,12 @@ public class Configuration {
         /**
          * Hint the builder to replace the value of the given system property if a
          * proper match is found.
-         * 
+         *
          * <p>
          * If the system property is referenced as a placeholder anywhere else in the
          * builder, this is not needed.
-         * 
-         * @param str
-         *            The system property key.
+         *
+         * @param str The system property key.
          * @return The builder for chaining.
          */
         public Builder resolveSystemProperty(String str) {
@@ -2661,13 +2549,12 @@ public class Configuration {
         /**
          * Hint the builder to replace the value of the given system properties if a
          * proper match is found.
-         * 
+         *
          * <p>
          * If these system properties are referenced as placeholders anywhere else in
          * the builder, this is not needed.
-         * 
-         * @param p
-         *            A collection of system property keys.
+         *
+         * @param p A collection of system property keys.
          * @return The builder for chaining.
          */
         public Builder resolveSystemProperties(Collection<String> p) {
@@ -2679,12 +2566,12 @@ public class Configuration {
         /**
          * Returns the listed system property keys to hint the builder to look for a
          * string that could be matched with the system property's value.
-         * 
+         *
          * <p>
          * This starts by containing the keys {@code user.home} and {@code user.dir},
          * you could remove them here to prevent from replacing those strings. Changes
          * will affect the actual list.
-         * 
+         *
          * @return The list of system property keys to resolve for matching.
          */
         public List<String> getSystemPropertiesToResolve() {
@@ -2694,17 +2581,15 @@ public class Configuration {
         /**
          * List the given class as the update handler when
          * {@link Configuration#update()} is called over this config.
-         * 
+         *
          * <p>
          * When explicitly listing a class in the config, it will not load the highest
          * version of the update handler. It also relieves you from having to advertise
          * them as required by the {@link ServiceLoader} class. Still, for modules you
          * would want to add the {@code provides} directive, since this would add the
          * module in the module graph and make the class visible to this framework.
-         * 
-         * @param clazz
-         *            The update handler class name.
-         * 
+         *
+         * @param clazz The update handler class name.
          * @return The builder for chaining.
          */
         public Builder updateHandler(Class<? extends UpdateHandler> clazz) {
@@ -2714,20 +2599,18 @@ public class Configuration {
         /**
          * List the given class as the update handler when
          * {@link Configuration#update()} is called over this config.
-         * 
+         *
          * <p>
          * When explicitly listing a class in the config, it will not load the highest
          * version of the update handler. It also relieves you from having to advertise
          * them as required by the {@link ServiceLoader} class. Still, for modules you
          * would want to add the {@code provides} directive, since this would add the
          * module in the module graph and make the class visible to this framework.
-         * 
+         *
          * <p>
          * This value may contain placeholders.
-         * 
-         * @param clazz
-         *            The update handler class name.
-         * 
+         *
+         * @param clazz The update handler class name.
          * @return The builder for chaining.
          */
         public Builder updateHandler(String className) {
@@ -2738,7 +2621,7 @@ public class Configuration {
 
         /**
          * Returns the class name passed in {@link #updateHandler(String)}.
-         * 
+         *
          * @return The class name passed in {@link #updateHandler(String)}.
          */
         public String getUpdateHandler() {
@@ -2748,17 +2631,15 @@ public class Configuration {
         /**
          * List the given class as the launcher when {@link Configuration#launch()} is
          * called over this config.
-         * 
+         *
          * <p>
          * When explicitly listing a class in the config, it will not load the highest
          * version of the launcher. It also relieves you from having to advertise them
          * as required by the {@link ServiceLoader} class. Still, for modules you would
          * want to add the {@code provides} directive, since this would add the module
          * in the module graph and make the class visible to this framework.
-         * 
-         * @param clazz
-         *            The update handler class name.
-         * 
+         *
+         * @param clazz The update handler class name.
          * @return The builder for chaining.
          */
         public Builder launcher(Class<? extends Launcher> clazz) {
@@ -2768,20 +2649,18 @@ public class Configuration {
         /**
          * List the given class as the launcher when {@link Configuration#launch()} is
          * called over this config.
-         * 
+         *
          * <p>
          * When explicitly listing a class in the config, it will not load the highest
          * version of the launcher. It also relieves you from having to advertise them
          * as required by the {@link ServiceLoader} class. Still, for modules you would
          * want to add the {@code provides} directive, since this would add the module
          * in the module graph and make the class visible to this framework.
-         * 
+         *
          * <p>
          * This value may contain placeholders.
-         * 
-         * @param clazz
-         *            The update handler class name.
-         * 
+         *
+         * @param clazz The update handler class name.
          * @return The builder for chaining.
          */
         public Builder launcher(String className) {
@@ -2792,7 +2671,7 @@ public class Configuration {
 
         /**
          * Returns the class name passed in {@link #updateHandler(String)}.
-         * 
+         *
          * @return The class name passed in {@link #updateHandler(String)}.
          */
         public String getLauncher() {
@@ -2803,9 +2682,8 @@ public class Configuration {
          * Attempt to replace strings with listed or system property placeholders
          * according to the given policy. By default, or if you use {@code null}, it
          * will use {@link PlaceholderMatchType#WHOLE_WORD}.
-         * 
-         * @param matcher
-         *            The match type to be used when implying placeholders.
+         *
+         * @param matcher The match type to be used when implying placeholders.
          * @return The builder for chaining.
          */
         public Builder matchAndReplace(PlaceholderMatchType matcher) {
@@ -2818,7 +2696,7 @@ public class Configuration {
          * Returns the policy passed in {@link #matchAndReplace(PlaceholderMatchType)}.
          * It will never return {@code null} but instead
          * {@link PlaceholderMatchType#WHOLE_WORD}.
-         * 
+         *
          * @return The match policy.
          */
         public PlaceholderMatchType getMatchType() {
@@ -2829,7 +2707,7 @@ public class Configuration {
          * Collects all information passed to the builder, replaces matches with
          * placeholder according to the {@link #getMatchType()} policy and validates all
          * values.
-         * 
+         *
          * @return A built Configuration according to the passed information.
          */
         public Configuration build() {

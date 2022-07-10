@@ -1,12 +1,12 @@
 /*
  * Copyright 2018 Mordechai Meisels
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * 		http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -41,12 +41,12 @@ import org.update4j.util.PropertyManager;
  * This class represents a managed file (&mdash;in sense of updating and
  * dynamically loading onto a JVM instance upon launch) in this framework. It
  * corresponds with the {@code <file>} XML element.
- * 
+ *
  * <p>
  * Some metadata is required for updating only, some are required for launch
  * only, and some are for both. The documentation will try to point that out for
  * each field.
- * 
+ *
  * <p>
  * An instance of this class cannot be created directly, only
  * {@link Configuration.Builder} and {@link Configuration#parse(ConfigMapper)}
@@ -56,12 +56,11 @@ import org.update4j.util.PropertyManager;
  * {@link FileMetadata#streamDirectory(Path)} for a complete directory. The
  * {@code parse()} method works with the {@link ConfigMapper} class that lists
  * files with {@link FileMapper}s.
- * 
+ *
  * <p>
  * An instance of this class is immutable and thus thread-safe.
- * 
- * @author Mordechai Meisels
  *
+ * @author Mordechai Meisels
  */
 public class FileMetadata {
 
@@ -69,6 +68,8 @@ public class FileMetadata {
     private final Path path;
     private Path normalizedPath;
     private final OS os;
+
+    private final Arch arch;
     private final long checksum;
     private final long size;
     private final boolean classpath;
@@ -82,13 +83,15 @@ public class FileMetadata {
     private final List<String> addReads;
 
     private FileMetadata(URI uri, Path path, OS os, long checksum, long size, boolean classpath, boolean modulepath,
-                    String comment, boolean ignoreBootConflict, String signature, List<AddPackage> addExports,
-                    List<AddPackage> addOpens, List<String> addReads) {
+                         String comment, boolean ignoreBootConflict, String signature, List<AddPackage> addExports,
+                         List<AddPackage> addOpens, List<String> addReads, Arch arch) {
+
+        this.arch = arch;
 
         this.uri = uri;
 
         // parsing properties might fail sometimes when not on current os, so let it through
-        if (os == null || os == OS.CURRENT) {
+        if ((os == null || os == OS.CURRENT) && (arch == null || arch == Arch.CURRENT)) {
             Objects.requireNonNull(uri, "uri");
 
             if (!uri.isAbsolute()) {
@@ -98,7 +101,7 @@ public class FileMetadata {
 
         this.path = path;
 
-        if (os == null || os == OS.CURRENT) {
+        if ((os == null || os == OS.CURRENT) && (arch == null || arch == Arch.CURRENT)) {
             Objects.requireNonNull(path, "path");
 
             if (!path.isAbsolute()) {
@@ -132,21 +135,21 @@ public class FileMetadata {
      * Returns the download URI for this file. This might be directly expressed in
      * the {@code uri} attribute as an absolute uri, relative to the base uri, or
      * &mdash; if missing &mdash; inferred from the {@code path} attribute.
-     * 
+     *
      * <p>
      * When inferring from the path it will use the complete path structure if
      * &mdash; and only if &mdash; the path is relative to the base path. Otherwise
      * it will only use the last part (i.e. the "filename").
-     * 
-     * 
+     *
+     *
      * <p>
      * If this file is marked for a foreign OS and the URI has a foreign property in
      * the file (a property marked for a different {@code os}), it will return
      * {@code null}.
-     * 
+     *
      * <p>
      * This field is only used for updating.
-     * 
+     *
      * @return The download URI for this file.
      */
     public URI getUri() {
@@ -157,20 +160,20 @@ public class FileMetadata {
      * Returns the local path for this file. This might be directly expressed in the
      * {@code path} attribute as an absolute path, relative to the base path, or
      * &mdash; if missing &mdash; inferred from the {@code uri} attribute.
-     * 
+     *
      * <p>
      * When inferring from the uri it will use the complete path structure if
      * &mdash; and only if &mdash; the uri is relative to the base uri. Otherwise it
      * will only use the last part (i.e. the "filename").
-     * 
+     *
      * <p>
      * If this file is marked for a foreign OS and the path has a foreign property
      * in the file (a property marked for a different {@code os}), it will return
      * {@code null}.
-     * 
+     *
      * <p>
      * This field is used for both updating and launching.
-     * 
+     *
      * @return The local path for this file.
      */
     public Path getPath() {
@@ -189,24 +192,29 @@ public class FileMetadata {
     /**
      * Returns the operating system expressed in the {@code os} attribute, or
      * {@code null} if non.
-     * 
+     *
      * <p>
      * This field is used for both updating and launching.
-     * 
+     *
      * @return The operating system expressed in the {@code os} attribute, or
-     *         {@code null} if non.
+     * {@code null} if non.
      */
     public OS getOs() {
         return os;
     }
 
+
+    public Arch getArch() {
+        return arch;
+    }
+
     /**
      * Returns the Adler32 checksum of this file. Used to check if an update is
      * needed and to validate the file post-download.
-     * 
+     *
      * <p>
      * This field is only used for updating.
-     * 
+     *
      * @return The Adler32 checksum of this file.
      */
     public long getChecksum() {
@@ -216,10 +224,10 @@ public class FileMetadata {
     /**
      * Returns the file size. Used to check if an update is needed, validate the
      * file post-download, and to calculate proper download deltas.
-     * 
+     *
      * <p>
      * This field is only used for updating.
-     * 
+     *
      * @return The file size.
      */
     public long getSize() {
@@ -229,10 +237,10 @@ public class FileMetadata {
     /**
      * Returns if this file is marked to be loaded on the dynamic classpath. Files
      * in the bootstrap and non-jar files should generally be marked {@code false}.
-     * 
+     *
      * <p>
      * This field is only used for launching.
-     * 
+     *
      * @return If this file is marked to be loaded on the dynamic classpath.
      */
     public boolean isClasspath() {
@@ -243,10 +251,10 @@ public class FileMetadata {
      * Returns if this file is marked to be loaded on the dynamic modulepath. Files
      * in the bootstrap should generally be marked {@code false}. Non-jar files must
      * not mark this {@code true} or the JVM will fail.
-     * 
+     *
      * <p>
      * This field is only used for launching.
-     * 
+     *
      * @return If this file is marked to be loaded on the dynamic classpath.
      */
     public boolean isModulepath() {
@@ -256,7 +264,7 @@ public class FileMetadata {
     /**
      * Returns a string from the {@code comment} attribute, or {@code null} if
      * missing.
-     * 
+     *
      * <p>
      * This has no effect on the framework and can be used for just anything. For
      * instance: you might mark this file with {@code requiresRestart} to notify the
@@ -264,10 +272,9 @@ public class FileMetadata {
      * update. Or you might put an authentication key which might then be used in
      * the download by overriding
      * {@link UpdateHandler#openDownloadStream(FileMetadata)}.
-     * 
-     * 
+     *
      * @return A string from the {@code comment} attribute, or {@code null} if
-     *         missing.
+     * missing.
      */
     public String getComment() {
         return comment;
@@ -275,7 +282,7 @@ public class FileMetadata {
 
     /**
      * Returns whether this file was marked to ignore a boot conflict check.
-     * 
+     *
      * <p>
      * The boot conflict check is a safety measure put in place to prevent breaking
      * your remote applications, and then being impossible to fix remotely just by
@@ -286,20 +293,20 @@ public class FileMetadata {
      * or just not a zip file), the JVM will complain and resist to start up. Since
      * we can't start the application anymore, there is no way to fix this other
      * than reinstalling the application.
-     * 
+     *
      * <p>
      * This file check is done for each and every file with the {@code .jar} file
      * extension, even if the file was explicitly marked with the {@code modulepath}
      * (meaning it is only loaded on the <em>dynamic</em> modulepath).
-     * 
+     *
      * <p>
      * In cases where the file is not visible to the boot modulepath (by carefully
      * placing it in the right directory) and you want to circumvent this check you
      * can mark this {@code true}.
-     * 
+     *
      * <p>
      * This field is only used for updating.
-     * 
+     *
      * @return If this file is marked to ignore a boot conflict check.
      */
     public boolean isIgnoreBootConflict() {
@@ -308,10 +315,10 @@ public class FileMetadata {
 
     /**
      * Returns the Base64 encoded file signature.
-     * 
+     *
      * <p>
      * This field is only used for updating.
-     * 
+     *
      * @return The Base64 encoded file signature.
      */
     public String getSignature() {
@@ -321,13 +328,13 @@ public class FileMetadata {
     /**
      * Returns an unmodifiable list of packages that should be exported to a module
      * despite not being defined so in the {@code module-info.class} file.
-     * 
+     *
      * <p>
      * This is ignored if {@link #isModulepath()} returns {@code false}.
-     * 
+     *
      * <p>
      * This field is only used for launching.
-     * 
+     *
      * @return A list of packages to be exported to other modules.
      */
     public List<AddPackage> getAddExports() {
@@ -337,13 +344,13 @@ public class FileMetadata {
     /**
      * Returns an unmodifiable list of packages that should be opened to a module
      * despite not being defined so in the {@code module-info.class} file.
-     * 
+     *
      * <p>
      * This is ignored if {@link #isModulepath()} returns {@code false}.
-     * 
+     *
      * <p>
      * This field is only used for launching.
-     * 
+     *
      * @return A list of packages to be opened to other modules.
      */
     public List<AddPackage> getAddOpens() {
@@ -353,13 +360,13 @@ public class FileMetadata {
     /**
      * Returns an unmodifiable list modules this module should read despite not
      * being defined so in the {@code module-info.class} file.
-     * 
+     *
      * <p>
      * This is ignored if {@link #isModulepath()} returns {@code false}.
-     * 
+     *
      * <p>
      * This field is only used for launching.
-     * 
+     *
      * @return A list of modules this module should read.
      */
     public List<String> getAddReads() {
@@ -368,31 +375,30 @@ public class FileMetadata {
 
     /**
      * Checks if this file is out of date and requires an update.
-     * 
+     *
      * @return If this file requires an update.
-     * 
-     * @throws IOException
-     *             If any exception arises while reading the file content.
+     * @throws IOException If any exception arises while reading the file content.
      */
     public boolean requiresUpdate() throws IOException {
         if (getOs() != null && getOs() != OS.CURRENT)
             return false;
 
+        if (getArch() != null && getArch() != Arch.CURRENT)
+            return false;
+
         return Files.notExists(getPath()) || Files.size(getPath()) != getSize()
-                        || FileUtils.getChecksum(getPath()) != getChecksum();
+                || FileUtils.getChecksum(getPath()) != getChecksum();
     }
 
     /**
      * Construct a {@link Reference} of the file at the provided location and can be
      * used in the Builder API.
-     * 
+     *
      * <p>
      * This should point to a real file on the filesystem and cannot contain
      * placeholders.
-     * 
-     * @param source
-     *            The path of the real file to which to refer in the builder.
-     * 
+     *
+     * @param source The path of the real file to which to refer in the builder.
      * @return A {@code Reference} to a file to be used in the Builder API.
      */
     public static Reference readFrom(Path source) {
@@ -402,14 +408,12 @@ public class FileMetadata {
     /**
      * Construct a {@link Reference} of the file at the provided location and can be
      * used in the Builder API.
-     * 
+     *
      * <p>
      * This should point to a real file on the filesystem and cannot contain
      * placeholders.
-     * 
-     * @param source
-     *            The path of the real file to which to refer in the builder.
-     * 
+     *
+     * @param source The path of the real file to which to refer in the builder.
      * @return A {@code Reference} to a file to be used in the Builder API.
      */
     public static Reference readFrom(String source) {
@@ -422,7 +426,7 @@ public class FileMetadata {
      * {@link Stream#peek(Consumer)}, or filter out files with
      * {@link Stream#filter(Predicate)}. It will only contain files and symlinks,
      * not directories.
-     * 
+     *
      * <p>
      * For convenience, this method also presets the {@code path()} to the file's
      * source path <em>relative to</em> to streamed directory. So for the directory
@@ -431,22 +435,20 @@ public class FileMetadata {
      * If you wish to infer the path from the URI (as described in
      * {@link FileMetadata.Reference#path(String)}) you must nullify it by calling
      * {@code path((String)null)}.
-     * 
+     *
      * <p>
      * This should point to a real directory on the filesystem and cannot contain
      * placeholders.
-     * 
-     * @param source
-     *            The path of the real directory to stream.
-     * 
+     *
+     * @param source The path of the real directory to stream.
      * @return A {@code Stream<Reference>} of files to be used in the Builder API.
      */
     public static Stream<Reference> streamDirectory(Path dir) {
         try {
             return Files.walk(dir)
-                            .filter(p -> Files.isRegularFile(p))
-                            .map(FileMetadata::readFrom)
-                            .peek(fm -> fm.path(dir.relativize(fm.getSource())));
+                    .filter(p -> Files.isRegularFile(p))
+                    .map(FileMetadata::readFrom)
+                    .peek(fm -> fm.path(dir.relativize(fm.getSource())));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -458,7 +460,7 @@ public class FileMetadata {
      * {@link Stream#peek(Consumer)}, or filter out files with
      * {@link Stream#filter(Predicate)}. It will only contain files and symlinks,
      * not directories.
-     * 
+     *
      * <p>
      * For convenience, this method also presets the {@code path()} to the file's
      * source path <em>relative to</em> to streamed directory. So for the directory
@@ -467,14 +469,12 @@ public class FileMetadata {
      * If you wish to infer the path from the URI (as described in
      * {@link FileMetadata.Reference#path(String)}) you must nullify it by calling
      * {@code path((String)null)}.
-     * 
+     *
      * <p>
      * This should point to a real directory on the filesystem and cannot contain
      * placeholders.
-     * 
-     * @param source
-     *            The path of the real directory to stream.
-     * 
+     *
+     * @param source The path of the real directory to stream.
      * @return A {@code Stream<Reference>} of files to be used in the Builder API.
      */
     public static Stream<Reference> streamDirectory(String dir) {
@@ -486,15 +486,15 @@ public class FileMetadata {
      * You can construct a reference by using either
      * {@link FileMetadata#readFrom(Path)} or
      * {@link FileMetadata#streamDirectory(Path)}.
-     * 
-     * @author Mordechai Meisels
      *
+     * @author Mordechai Meisels
      */
     public static class Reference {
         private Path source;
         private String path;
         private String uri;
         private OS os;
+        private Arch arch;
         private Boolean classpath;
         private Boolean modulepath;
         private String comment;
@@ -516,7 +516,7 @@ public class FileMetadata {
 
         /**
          * Returns the real file location that this instance refers to.
-         * 
+         *
          * @return The real file location that this instance refers to.
          */
         public Path getSource() {
@@ -527,12 +527,12 @@ public class FileMetadata {
          * Set the download URI for this file. This might be an absolute uri, relative
          * to the base uri, or &mdash; if missing &mdash; inferred from the
          * {@code path}.
-         * 
+         *
          * <p>
          * When inferring from the path it will use the complete path structure if
          * &mdash; and only if &mdash; the path is relative to the base path. Otherwise
          * it will only use the last part (i.e. the "filename").
-         * 
+         *
          * @return This instance for chaining.
          */
         public Reference uri(URI uri) {
@@ -543,15 +543,15 @@ public class FileMetadata {
          * Set the download URI for this file. This might be an absolute uri, relative
          * to the base uri, or &mdash; if missing &mdash; inferred from the
          * {@code path}.
-         * 
+         *
          * <p>
          * When inferring from the path it will use the complete path structure if
          * &mdash; and only if &mdash; the path is relative to the base path. Otherwise
          * it will only use the last part (i.e. the "filename").
-         * 
+         *
          * <p>
          * This field may contain placeholders.
-         * 
+         *
          * @return This instance for chaining.
          */
         public Reference uri(String uri) {
@@ -562,7 +562,7 @@ public class FileMetadata {
 
         /**
          * Returns the URI passed in {@link #uri(String)} or {@code null} if non.
-         * 
+         *
          * @return The URI passed in {@link #uri(String)} or {@code null}.
          */
         public String getUri() {
@@ -573,13 +573,12 @@ public class FileMetadata {
          * Sets the local path for this file. This might be an absolute path, relative
          * to the base path, or &mdash; if missing &mdash; inferred from the {@code uri}
          * attribute, if both are missing, the source returned by {@link #getSource()}.
-         * 
+         *
          * <p>
          * When inferring from the uri it will use the complete path structure if
          * &mdash; and only if &mdash; the uri is relative to the base uri. Otherwise it
          * will only use the last part (i.e. the "filename").
-         * 
-         * 
+         *
          * @return This instance for chaining.
          */
         public Reference path(Path path) {
@@ -590,13 +589,12 @@ public class FileMetadata {
          * Sets the local path for this file. This might be an absolute path, relative
          * to the base path, or &mdash; if missing &mdash; inferred from the {@code uri}
          * attribute, if both are missing, the source returned by {@link #getSource()}.
-         * 
+         *
          * <p>
          * When inferring from the uri it will use the complete path structure if
          * &mdash; and only if &mdash; the uri is relative to the base uri. Otherwise it
          * will only use the last part (i.e. the "filename").
-         * 
-         * 
+         *
          * @return This instance for chaining.
          */
         public Reference path(String path) {
@@ -607,7 +605,7 @@ public class FileMetadata {
 
         /**
          * Returns the path passed in {@link #path(String)} or {@code null} if non.
-         * 
+         *
          * @return The path passed in {@link #path(String)} or {@code null}.
          */
         String getPath() {
@@ -617,9 +615,8 @@ public class FileMetadata {
         /**
          * Sets the os of this file to exclude it from other operating systems when
          * updating and launching.
-         * 
-         * @param os
-         *            The operating system to associate this file with.
+         *
+         * @param os The operating system to associate this file with.
          * @return This instance for chaining.
          */
         public Reference os(OS os) {
@@ -628,32 +625,38 @@ public class FileMetadata {
             return this;
         }
 
+        public Reference arch(Arch arch) {
+            this.arch = arch;
+
+            return this;
+        }
+
         /**
          * Sets the os by parsing the filename. The os is detected if it matches this
          * pattern:
-         * 
+         *
          * <pre>
          * filename-<b>os</b>.extension
          * </pre>
-         * 
+         * <p>
          * where {@code os} can be {@code win}, {@code mac} or {@code linux}.
-         * 
+         *
          * <p>
          * Examples include:
-         * 
+         *
          * <pre>
          * appicon-win.ico
          * appicon-mac.icns
          * appicon-linux.png
-         * 
+         *
          * javafx-base-11.0.1-win.jar
          * javafx-base-11.0.1-mac.jar
          * javafx-base-11.0.1-linux.jar
          * </pre>
-         * 
+         *
          * <p>
          * If a match is not found, the old value will not be changed.
-         * 
+         *
          * @return This instance for chaining.
          */
         public Reference osFromFilename() {
@@ -666,11 +669,15 @@ public class FileMetadata {
 
         /**
          * Returns the os passed in {@link #os(OS)} or {@code null} if non.
-         * 
+         *
          * @return The os passed in {@link #os(OS)} or {@code null}.
          */
         public OS getOs() {
             return os;
+        }
+
+        public Arch getArch() {
+            return arch;
         }
 
         public Reference classpath(boolean cp) {
@@ -808,7 +815,7 @@ public class FileMetadata {
         }
 
         FileMapper getFileMapper(PropertyManager pm, String baseUri, String basePath, PlaceholderMatchType matchType,
-                        PrivateKey key) {
+                                 PrivateKey key) {
             try {
 
                 String path = getPath();
@@ -850,6 +857,7 @@ public class FileMetadata {
                 }
 
                 mapper.os = getOs();
+                mapper.arch = getArch();
                 mapper.size = getSize();
                 mapper.checksum = Long.toHexString(getChecksum());
                 mapper.classpath = isClasspath();
@@ -884,6 +892,8 @@ public class FileMetadata {
         private URI uri;
         private Path path;
         private OS os;
+
+        private Arch arch;
         private long checksum;
         private long size;
         private boolean classpath;
@@ -928,6 +938,12 @@ public class FileMetadata {
 
         Builder os(OS os) {
             this.os = os;
+
+            return this;
+        }
+
+        Builder arch(Arch arch) {
+            this.arch = arch;
 
             return this;
         }
@@ -1043,7 +1059,7 @@ public class FileMetadata {
             }
 
             return new FileMetadata(uri, path, os, checksum, size, classpath, modulepath, comment, ignoreBootConflict,
-                            signature, addExports, addOpens, addReads);
+                    signature, addExports, addOpens, addReads, arch);
         }
     }
 }
