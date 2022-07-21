@@ -91,7 +91,7 @@ public class FileMetadata {
         this.uri = uri;
 
         // parsing properties might fail sometimes when not on current os, so let it through
-        if ((os == null || os == OS.CURRENT) && (arch == null || arch == Arch.CURRENT)) {
+        if (os == null || os == OS.CURRENT) {
             Objects.requireNonNull(uri, "uri");
 
             if (!uri.isAbsolute()) {
@@ -101,7 +101,7 @@ public class FileMetadata {
 
         this.path = path;
 
-        if ((os == null || os == OS.CURRENT) && (arch == null || arch == Arch.CURRENT)) {
+        if (os == null || os == OS.CURRENT) {
             Objects.requireNonNull(path, "path");
 
             if (!path.isAbsolute()) {
